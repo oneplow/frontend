@@ -1,16 +1,22 @@
 import { useState } from 'react';
-import { Copy, Check, Terminal, Code2, Link2, Sparkles } from 'lucide-react';
+import { Copy, Check, Terminal, Code2, Link2, Sparkles, Braces } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+
+type Tab = 'curl-linux' | 'curl-windows' | 'javascript' | 'python';
 
 export const Docs = () => {
   const { apiUrl, userToken } = useAuth();
-  const [copiedCurl, setCopiedCurl] = useState(false);
-  const [copiedPython, setCopiedPython] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('curl-linux');
 
   const baseUrl = apiUrl.replace(/\/$/, '');
   const displayToken = userToken || 'YOUR_API_KEY';
 
-  const curlCommand = `curl -X POST ${baseUrl}/v1/chat/completions \\
+  const codeExamples: Record<Tab, { label: string; icon: any; code: string }> = {
+    'curl-linux': {
+      label: 'cURL (Linux/macOS)',
+      icon: Terminal,
+      code: `curl -X POST ${baseUrl}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${displayToken}" \\
   -d '{
@@ -21,9 +27,37 @@ export const Docs = () => {
         "content": "Hello!"
       }
     ]
-  }'`;
+  }'`,
+    },
+    'curl-windows': {
+      label: 'cURL (Windows CMD)',
+      icon: Terminal,
+      code: `curl -X POST ${baseUrl}/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${displayToken}" -d "{\\"model\\": \\"default\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello!\\"}]}"`,
+    },
+    javascript: {
+      label: 'JavaScript',
+      icon: Braces,
+      code: `const response = await fetch("${baseUrl}/v1/chat/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer ${displayToken}",
+  },
+  body: JSON.stringify({
+    model: "default",
+    messages: [
+      { role: "user", content: "Hello!" }
+    ],
+  }),
+});
 
-  const pythonCode = `import openai
+const data = await response.json();
+console.log(data.choices[0].message.content);`,
+    },
+    python: {
+      label: 'Python',
+      icon: Code2,
+      code: `import openai
 
 client = openai.OpenAI(
     base_url="${baseUrl}/v1",
@@ -37,9 +71,11 @@ response = client.chat.completions.create(
     ]
 )
 
-print(response.choices[0].message.content)`;
+print(response.choices[0].message.content)`,
+    },
+  };
 
-  const copyToClipboard = (text: string, setter: (val: boolean) => void) => {
+  const copyToClipboard = (text: string) => {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(text);
     } else {
@@ -57,9 +93,14 @@ print(response.choices[0].message.content)`;
         textArea.remove();
       }
     }
-    setter(true);
-    setTimeout(() => setter(false), 2000);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2000);
   };
+
+  const currentExample = codeExamples[activeTab];
+  const IconComponent = currentExample.icon;
+
+  const tabs: Tab[] = ['curl-linux', 'curl-windows', 'javascript', 'python'];
 
   return (
     <div className="space-y-5">
@@ -91,59 +132,103 @@ print(response.choices[0].message.content)`;
         </section>
 
         <section className="surface-card overflow-hidden rounded-[32px]">
-          <div className="flex items-center justify-between border-b border-blue-100 bg-slate-50/80 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-blue-300"></div>
-                <div className="h-3 w-3 rounded-full bg-sky-300"></div>
-                <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
-              </div>
-              <h2 className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <Terminal size={14} className="text-blue-600" />
-                bash
-              </h2>
+          {/* Tab Header */}
+          <div className="flex items-center justify-between border-b border-blue-100 bg-slate-50/80 px-4 py-3">
+            <div className="flex items-center gap-1 overflow-x-auto">
+              {tabs.map((tab) => {
+                const example = codeExamples[tab];
+                const TabIcon = example.icon;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-all ${
+                      activeTab === tab
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-500 hover:bg-white hover:text-slate-700'
+                    }`}
+                  >
+                    <TabIcon size={13} />
+                    {example.label}
+                  </button>
+                );
+              })}
             </div>
             <button
-              onClick={() => copyToClipboard(curlCommand, setCopiedCurl)}
-              className="btn-secondary px-3 py-2 text-xs"
+              onClick={() => copyToClipboard(currentExample.code)}
+              className="btn-secondary px-3 py-1.5 text-xs ml-2 shrink-0"
             >
-              {copiedCurl ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              {copiedCurl ? 'Copied!' : 'Copy'}
+              {copiedCode ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+              {copiedCode ? 'Copied!' : 'Copy'}
             </button>
           </div>
+
+          {/* Code Block */}
           <div className="bg-white p-6">
             <pre className="overflow-x-auto rounded-[24px] border border-blue-100 bg-slate-950 px-5 py-5 text-sm font-mono text-slate-100">
-              <code>{curlCommand}</code>
+              <code>{currentExample.code}</code>
             </pre>
           </div>
         </section>
 
-        <section className="surface-card overflow-hidden rounded-[32px]">
-          <div className="flex items-center justify-between border-b border-blue-100 bg-slate-50/80 px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-blue-300"></div>
-                <div className="h-3 w-3 rounded-full bg-sky-300"></div>
-                <div className="h-3 w-3 rounded-full bg-indigo-300"></div>
-              </div>
-              <h2 className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                <Code2 size={14} className="text-blue-600" />
-                python
-              </h2>
-            </div>
-            <button
-              onClick={() => copyToClipboard(pythonCode, setCopiedPython)}
-              className="btn-secondary px-3 py-2 text-xs"
-            >
-              {copiedPython ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
-              {copiedPython ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <div className="bg-white p-6">
-            <pre className="overflow-x-auto rounded-[24px] border border-blue-100 bg-slate-950 px-5 py-5 text-sm font-mono text-slate-100">
-              <code>{pythonCode}</code>
-            </pre>
-          </div>
+        {/* Streaming Example */}
+        <section className="surface-card rounded-[32px] p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <Sparkles size={20} className="text-purple-500" />
+            Streaming Response
+          </h2>
+          <p className="mb-4 text-sm text-slate-500">
+            เพิ่ม <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-700">"stream": true</code> ในคำขอเพื่อรับ response แบบ real-time ทีละ token
+          </p>
+
+          <pre className="overflow-x-auto rounded-[24px] border border-blue-100 bg-slate-950 px-5 py-5 text-sm font-mono text-slate-100">
+            <code>{`# Python Streaming Example
+import openai
+
+client = openai.OpenAI(
+    base_url="${baseUrl}/v1",
+    api_key="${displayToken}",
+)
+
+stream = client.chat.completions.create(
+    model="default",
+    messages=[
+        {"role": "user", "content": "Hello!"}
+    ],
+    stream=True
+)
+
+for chunk in stream:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+print()`}</code>
+          </pre>
+        </section>
+
+        {/* Notes */}
+        <section className="surface-card rounded-[32px] p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <Code2 size={20} className="text-emerald-500" />
+            Notes
+          </h2>
+          <ul className="space-y-3 text-sm text-slate-600">
+            <li className="flex items-start gap-2">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+              ระบบรองรับ OpenAI-compatible format — สามารถใช้ <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-700">openai</code> SDK ได้เลยโดยเปลี่ยน base_url
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+              สำหรับ Windows CMD ต้องใช้ double quotes และ escape ด้วย <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-700">\"</code> แทน single quotes
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+              ใช้ <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-700">"model": "default"</code> หรือระบุชื่อโมเดลเฉพาะจากหน้า API Keys ได้
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400"></span>
+              ดูรายชื่อโมเดลที่รองรับได้จาก <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono text-slate-700">GET /v1/models</code>
+            </li>
+          </ul>
         </section>
       </div>
     </div>

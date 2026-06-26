@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Shield, AlertCircle, LockKeyhole } from 'lucide-react';
+import { ArrowRight, Shield, AlertCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,35 +34,7 @@ export const AdminSignIn = () => {
 
   return (
     <div className="page-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
-      <div className="grid w-full max-w-6xl gap-6 lg:grid-cols-[1fr_1fr]">
-        <div className="surface-card hidden rounded-[36px] p-8 lg:block">
-          <div className="badge-blue mb-5">
-            <LockKeyhole size={12} />
-            Admin Access
-          </div>
-          <h1 className="text-4xl font-semibold leading-tight text-slate-900">
-            พื้นที่สำหรับผู้ดูแลระบบที่คงโทนคลีนแบบเดียวกับทั้งพอร์ทัล
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-slate-500">
-            ใช้ admin key เพื่อเข้าสู่ระบบและจัดการผู้ใช้งานหรือคีย์ทั้งหมดในมุมมองที่เป็นระเบียบขึ้น
-          </p>
-
-          <div className="mt-8 grid gap-4">
-            <div className="surface-card-soft rounded-[24px] p-5">
-              <div className="text-sm font-semibold text-slate-900">Centralized control</div>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                ดูข้อมูลผู้ใช้และ API keys ในโครงสร้างเดียวกันกับหน้า user
-              </p>
-            </div>
-            <div className="surface-card-soft rounded-[24px] p-5">
-              <div className="text-sm font-semibold text-slate-900">Calm visual hierarchy</div>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                ใช้สีน้ำเงิน-ขาวเป็นหลัก พร้อมเน้นจุดสำคัญด้วย contrast ที่ชัดเจนแต่ไม่หนักตา
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <div className="w-full max-w-md">
         <div className="surface-card rounded-[36px] p-6 sm:p-8">
           <div className="mb-8">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
@@ -113,7 +85,7 @@ export const AdminSignIn = () => {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-blue-100 pt-5">
+          <div className="mt-6 border-t border-blue-100 pt-5 text-center">
             <Link to="/sign-in" className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
               Return to User Login
             </Link>

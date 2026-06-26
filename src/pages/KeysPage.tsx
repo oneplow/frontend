@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Key, Activity, Copy, RefreshCw, Trash2, Clock3, CheckCircle2, Plus, AlertCircle, X, ChevronDown } from 'lucide-react';
+import { Key, Activity, Copy, RefreshCw, Trash2, Clock3, CheckCircle2, Plus, AlertCircle, X, ChevronDown, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
 
@@ -56,6 +56,7 @@ export const KeysPage = () => {
   const [formAllowedModels, setFormAllowedModels] = useState('');
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -120,6 +121,7 @@ export const KeysPage = () => {
       setFormAllowedModels(currentKey?.allowed_models ?? '');
     }
 
+    setModelSearchQuery('');
     setCreateOpen(true);
   };
 
@@ -166,16 +168,16 @@ export const KeysPage = () => {
 
       const payload = isAdmin
         ? {
-            ...(formName.trim() ? { name: formName.trim() } : {}),
-            ...(formCustomKey.trim() ? { key: formCustomKey.trim() } : {}),
-            ...(rpmValue !== undefined ? { rpm_limit: rpmValue } : {}),
-            ...(expiresValue !== undefined ? { expires_in_days: expiresValue } : {})
-          }
+          ...(formName.trim() ? { name: formName.trim() } : {}),
+          ...(formCustomKey.trim() ? { key: formCustomKey.trim() } : {}),
+          ...(rpmValue !== undefined ? { rpm_limit: rpmValue } : {}),
+          ...(expiresValue !== undefined ? { expires_in_days: expiresValue } : {})
+        }
         : {
-            rpm_limit: rpmValue ?? 60,
-            expires_in_days: expiresValue ?? null,
-            allowed_models: formAllowedModels.trim() || null
-          };
+          rpm_limit: rpmValue ?? 60,
+          expires_in_days: expiresValue ?? null,
+          allowed_models: formAllowedModels.trim() || null
+        };
 
       const res = await fetch(`${cleanUrl}${endpoint}`, {
         method: 'POST',
@@ -499,7 +501,7 @@ export const KeysPage = () => {
                 <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
                   Allowed Models
                 </label>
-                <div 
+                <div
                   className="input-field min-h-[42px] cursor-pointer flex flex-wrap items-center gap-1.5 relative pr-8"
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
@@ -509,8 +511,8 @@ export const KeysPage = () => {
                     formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
                       <span key={m} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1">
                         {m}
-                        <X size={12} className="cursor-pointer hover:text-blue-900" onClick={(e) => { 
-                          e.stopPropagation(); 
+                        <X size={12} className="cursor-pointer hover:text-blue-900" onClick={(e) => {
+                          e.stopPropagation();
                           const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
                           setFormAllowedModels(updated.join(','));
                         }} />
@@ -519,37 +521,54 @@ export const KeysPage = () => {
                   )}
                   <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
-                
+
                 {isDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                    <div className="absolute top-[70px] left-0 right-0 mt-1 max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg z-50 p-1">
-                      {availableModels.length === 0 ? (
-                        <div className="p-3 text-sm text-slate-500 text-center">Loading models...</div>
-                      ) : (
-                        availableModels.map(model => {
-                          const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
-                          return (
-                            <label key={model} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                checked={isSelected}
-                                onChange={() => {
-                                  let selected = formAllowedModels.split(',').map(m => m.trim()).filter(Boolean);
-                                  if (isSelected) {
-                                    selected = selected.filter(m => m !== model);
-                                  } else {
-                                    selected.push(model);
-                                  }
-                                  setFormAllowedModels(selected.join(','));
-                                }}
-                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-sm font-medium text-slate-700">{model}</span>
-                            </label>
-                          );
-                        })
-                      )}
+                    <div className="absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
+                      <div className="p-2 border-b border-slate-100 shrink-0 relative">
+                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          className="w-full bg-slate-50 border-none rounded-lg pl-9 pr-3 py-1.5 text-sm focus:ring-0 focus:outline-none"
+                          placeholder="Search models..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <div className="overflow-y-auto p-1">
+                        {availableModels.length === 0 ? (
+                          <div className="p-3 text-sm text-slate-500 text-center">Loading models...</div>
+                        ) : (
+                          availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
+                            <div className="p-3 text-sm text-slate-500 text-center">No models found</div>
+                          ) : (
+                            availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
+                              const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
+                              return (
+                                <label key={model} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => {
+                                      let selected = formAllowedModels.split(',').map(m => m.trim()).filter(Boolean);
+                                      if (isSelected) {
+                                        selected = selected.filter(m => m !== model);
+                                      } else {
+                                        selected.push(model);
+                                      }
+                                      setFormAllowedModels(selected.join(','));
+                                    }}
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm font-medium text-slate-700">{model}</span>
+                                </label>
+                              );
+                            })
+                          )
+                        )}
+                      </div>
                     </div>
                   </>
                 )}

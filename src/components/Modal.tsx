@@ -25,7 +25,7 @@ export const Modal = ({ isOpen, onClose, title, children, maxWidth = 'max-w-md' 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/20 p-4 backdrop-blur-sm">
-      <div className={`surface-card w-full overflow-hidden rounded-[28px] ${maxWidth}`}>
+      <div className={`surface-card w-full rounded-[28px] ${maxWidth}`}>
         <div className="flex items-center justify-between border-b border-blue-100 px-6 py-5">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-600">
