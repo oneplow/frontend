@@ -1,17 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { AlertCircle, KeyRound } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const SignIn = () => {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { apiUrl, loginUser } = useAuth();
   const navigate = useNavigate();
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
-    setLoading(true);
     setError('');
     
     try {
@@ -27,8 +25,6 @@ export const SignIn = () => {
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed');
-    } finally {
-      setLoading(false);
     }
   };
 
