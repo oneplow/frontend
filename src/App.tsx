@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Key, Plus, Trash2, LogOut, ShieldCheck, Activity, RefreshCw, AlertCircle, User, Edit, Users } from 'lucide-react';
+import { Key, Plus, Trash2, LogOut, ShieldCheck, Activity, RefreshCw, AlertCircle, User, Edit, Users, Terminal } from 'lucide-react';
+import Docs from './Docs';
 
 interface ApiKey {
   key: string;
@@ -61,6 +62,7 @@ export default function App() {
   // Portal tabs
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [authTab, setAuthTab] = useState<'login' | 'register'>('login');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'docs'>('dashboard');
   
   // Dashboard Tabs (For Admin)
   const [adminTab, setAdminTab] = useState<'keys' | 'users'>('keys');
@@ -419,8 +421,18 @@ export default function App() {
             <span className="w-2 h-2 rounded-full bg-green-500"></span> Connected to {apiUrl}
           </p>
         </div>
-        <div className="flex gap-3 w-full sm:w-auto">
-          {(!isUser || keys.length === 0) && (
+        <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+          {viewMode === 'dashboard' ? (
+            <button className="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-5 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-indigo-200" onClick={() => setViewMode('docs')}>
+              <Terminal size={18} /> API Docs
+            </button>
+          ) : (
+            <button className="flex-1 sm:flex-none bg-slate-50 hover:bg-slate-100 text-slate-700 px-5 py-2.5 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-slate-200" onClick={() => setViewMode('dashboard')}>
+              Back to Dashboard
+            </button>
+          )}
+
+          {(!isUser || keys.length === 0) && viewMode === 'dashboard' && (
             <button className="flex-1 sm:flex-none bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-md shadow-primary/20 flex items-center justify-center gap-2" onClick={() => openGenModal()}>
               <Plus size={18} /> Generate Key
             </button>
@@ -431,8 +443,12 @@ export default function App() {
         </div>
       </header>
 
-      {isAdmin && (
-        <div className="flex bg-white rounded-t-2xl border border-slate-200 border-b-0 overflow-hidden text-sm font-medium">
+      {viewMode === 'docs' ? (
+        <Docs apiUrl={apiUrl} userToken={keys[0]?.key || ''} />
+      ) : (
+        <>
+          {isAdmin && (
+            <div className="flex bg-white rounded-t-2xl border border-slate-200 border-b-0 overflow-hidden text-sm font-medium">
           <button 
             className={`flex-1 py-3 px-6 flex items-center justify-center gap-2 transition-all ${adminTab === 'keys' ? 'bg-primary text-white border-b-2 border-primary-hover' : 'text-slate-600 hover:bg-slate-50'}`}
             onClick={() => setAdminTab('keys')}
@@ -573,6 +589,8 @@ export default function App() {
           </div>
         )}
       </div>
+      </>
+      )}
 
       {showGenModal && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 animate-[fadeIn_0.2s_ease-out]" onClick={() => { if (!generatedKey) setShowGenModal(false) }}>
