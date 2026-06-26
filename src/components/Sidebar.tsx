@@ -101,8 +101,6 @@ export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
     };
   }, [apiUrl, isAdmin, userToken]);
 
-  const cleanApiUrl = apiUrl.replace(/^https?:\/\//, '');
-
   const getKeyStatus = () => {
     if (isAdmin) return 'Admin';
     if (!keyInfo) return 'No key';
