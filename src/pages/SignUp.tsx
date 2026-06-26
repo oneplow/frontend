@@ -1,39 +1,30 @@
 import React, { useState } from 'react';
-import { ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export const SignUp = () => {
-  const [authUsername, setAuthUsername] = useState('');
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authConfirmPassword, setAuthConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { apiUrl } = useAuth();
+  const { apiUrl, loginUser } = useAuth();
   const navigate = useNavigate();
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleSuccess = async (credentialResponse: any) => {
     setLoading(true);
     setError('');
     
-    if (authPassword !== authConfirmPassword) {
-      setError("Passwords don't match");
-      setLoading(false);
-      return;
-    }
-    
     try {
-      const res = await fetch(`${apiUrl}/auth/register`, {
+      const res = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: authUsername, password: authPassword, email: authEmail || null })
+        body: JSON.stringify({ credential: credentialResponse.credential })
       });
       if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
       
-      // On success, redirect to login
-      navigate('/sign-in');
+      loginUser(apiUrl, data.token, data.username);
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed');
     } finally {
@@ -62,70 +53,22 @@ export const SignUp = () => {
             </div>
           )}
 
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Username
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="johndoe"
-                value={authUsername}
-                onChange={(e) => setAuthUsername(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                Email (Optional)
-              </label>
-              <input
-                type="email"
-                className="input-field"
-                placeholder="john@example.com"
-                value={authEmail}
-                onChange={(e) => setAuthEmail(e.target.value)}
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="••••••••"
-                  value={authPassword}
-                  onChange={(e) => setAuthPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
-                  Confirm
-                </label>
-                <input
-                  type="password"
-                  className="input-field"
-                  placeholder="••••••••"
-                  value={authConfirmPassword}
-                  onChange={(e) => setAuthConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <button type="submit" disabled={loading} className="btn-primary mt-2 w-full">
-              {loading ? 'Creating...' : 'Sign Up'}
-              {!loading && <ArrowRight size={16} />}
-            </button>
-          </form>
+          <div className="flex justify-center mt-6">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setError('Google Sign-Up failed')}
+              useOneTap
+              theme="outline"
+              size="large"
+              width="100%"
+              text="signup_with"
+            />
+          </div>
 
-          <div className="mt-6 text-sm text-slate-500 text-center">
-            มีบัญชีอยู่แล้ว?
-            <Link to="/sign-in" className="ml-2 font-semibold text-blue-600 transition-colors hover:text-blue-700">
-              Sign In
+          <div className="mt-8 text-center text-sm text-slate-500">
+            มีบัญชีผู้ใช้อยู่แล้ว?{' '}
+            <Link to="/sign-in" className="font-semibold text-blue-600 hover:text-blue-700">
+              เข้าสู่ระบบ
             </Link>
           </div>
         </div>
