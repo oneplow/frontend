@@ -16,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [apiUrl, setApiUrlState] = useState(localStorage.getItem('API_URL') || 'http://localhost:8000');
+  const [apiUrl, setApiUrlState] = useState(localStorage.getItem('API_URL') || import.meta.env.VITE_API_URL || 'http://localhost:8000');
   const [adminKey, setAdminKey] = useState(localStorage.getItem('ADMIN_KEY') || '');
   const [userToken, setUserToken] = useState(localStorage.getItem('USER_TOKEN') || '');
   const [username, setUsername] = useState(localStorage.getItem('USERNAME') || '');
