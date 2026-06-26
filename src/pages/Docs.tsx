@@ -26,13 +26,14 @@ export const Docs = () => {
         "role": "user",
         "content": "Hello!"
       }
-    ]
+    ],
+    "stream": true
   }'`,
     },
     'curl-windows': {
       label: 'cURL (Windows CMD)',
       icon: Terminal,
-      code: `curl -X POST ${baseUrl}/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${displayToken}" -d "{\\"model\\": \\"default\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello!\\"}]}"`,
+      code: `curl -X POST ${baseUrl}/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${displayToken}" -d "{\\"model\\": \\"default\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello!\\"}], \\"stream\\": true}"`,
     },
     javascript: {
       label: 'JavaScript',
@@ -48,11 +49,19 @@ export const Docs = () => {
     messages: [
       { role: "user", content: "Hello!" }
     ],
+    stream: true
   }),
 });
 
-const data = await response.json();
-console.log(data.choices[0].message.content);`,
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+while (true) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  // Parse SSE chunks (simplified)
+  const chunk = decoder.decode(value);
+  console.log(chunk);
+}`,
     },
     python: {
       label: 'Python',
@@ -68,10 +77,14 @@ response = client.chat.completions.create(
     model="default",
     messages=[
         {"role": "user", "content": "Hello!"}
-    ]
+    ],
+    stream=True
 )
 
-print(response.choices[0].message.content)`,
+for chunk in response:
+    if chunk.choices[0].delta.content:
+        print(chunk.choices[0].delta.content, end="")
+print()`,
     },
   };
 

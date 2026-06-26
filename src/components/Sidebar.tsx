@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -26,12 +26,13 @@ interface SidebarProps {
 
 export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
   const { isAdmin, apiUrl, userToken, username, logout } = useAuth();
+  const navigate = useNavigate();
   const [keyInfo, setKeyInfo] = useState<SidebarKeyInfo | null>(null);
   const [healthStatus, setHealthStatus] = useState('Checking');
 
   const handleLogout = () => {
     logout();
-    window.location.href = '/sign-in';
+    navigate('/sign-in');
   };
 
   const navItemClass = ({ isActive }: { isActive: boolean }) =>

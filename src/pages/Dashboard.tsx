@@ -147,33 +147,8 @@ export const Dashboard = () => {
   const token = isAdmin ? adminKey : userToken;
 
   // Fetch health + keys + users
-  const fetchAll = useCallback(async () => {
-    try {
-      const healthRes = await fetch(`${cleanUrl}/health`);
-      if (healthRes.ok) {
-        const data: HealthData = await healthRes.json();
-        setHealth(data);
-
-        // Build history from counter deltas
-        const counters = data.counters || {};
-        const now = new Date();
-
-        if (prevCounters.current) {
-          const prev = prevCounters.current;
-          const point: TimePoint = {
-            time: now,
-            sendOk: Math.max(0, (counters.send_ok || 0) - (prev.send_ok || 0)),
-            sendFail: Math.max(0, (counters.send_fail || 0) - (prev.send_fail || 0)),
-            harvestOk: Math.max(0, (counters.harvest_ok || 0) - (prev.harvest_ok || 0)),
-            harvestFail: Math.max(0, (counters.harvest_fail || 0) - (prev.harvest_fail || 0))
-          };
-          setHistory((h) => [...h.slice(-59), point]); // keep last 60 points
-        }
-        prevCounters.current = { ...counters };
-      }
-    } catch { /* ignore */ }
-
-    // Fetch keys count
+  // Fetch keys and users (static data)
+  const fetchStaticData = useCallback(async () => {
     if (token) {
       try {
         const endpoint = isAdmin ? '/admin/keys' : '/user/keys';
@@ -187,7 +162,6 @@ export const Dashboard = () => {
       } catch { /* ignore */ }
     }
 
-    // Fetch users count (admin only)
     if (isAdmin && adminKey) {
       try {
         const res = await fetch(`${cleanUrl}/admin/users`, {
@@ -201,11 +175,91 @@ export const Dashboard = () => {
     }
   }, [cleanUrl, token, isAdmin, adminKey]);
 
+  // Handle static data polling
   useEffect(() => {
-    fetchAll();
-    const interval = setInterval(fetchAll, 15000); // poll every 15s
+    fetchStaticData();
+    const interval = setInterval(fetchStaticData, 15000);
     return () => clearInterval(interval);
-  }, [fetchAll]);
+  }, [fetchStaticData]);
+
+  // Handle SSE stream for health
+  useEffect(() => {
+    let active = true;
+    const abortController = new AbortController();
+
+    const startStream = async () => {
+      try {
+        const res = await fetch(`${cleanUrl}/health/stream`, {
+          signal: abortController.signal
+        });
+
+        if (!res.body) return;
+        
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (active) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || ''; // Keep the last incomplete part in the buffer
+
+          for (const part of parts) {
+            if (part.startsWith('data: ')) {
+              const jsonStr = part.slice(6); // remove 'data: '
+              if (jsonStr.trim() === '[DONE]') continue;
+              
+              try {
+                const data: HealthData = JSON.parse(jsonStr);
+                setHealth(data);
+
+                // Update history chart
+                const counters = data.counters || {};
+                const now = new Date();
+
+                if (prevCounters.current) {
+                  const prev = prevCounters.current;
+                  const point: TimePoint = {
+                    time: now,
+                    sendOk: Math.max(0, (counters.send_ok || 0) - (prev.send_ok || 0)),
+                    sendFail: Math.max(0, (counters.send_fail || 0) - (prev.send_fail || 0)),
+                    harvestOk: Math.max(0, (counters.harvest_ok || 0) - (prev.harvest_ok || 0)),
+                    harvestFail: Math.max(0, (counters.harvest_fail || 0) - (prev.harvest_fail || 0))
+                  };
+                  // We update history efficiently by using the functional state update
+                  setHistory((h) => [...h.slice(-59), point]); // keep last 60 points
+                }
+                prevCounters.current = { ...counters };
+
+              } catch (e) {
+                console.error("Failed to parse SSE JSON", e);
+              }
+            }
+          }
+        }
+      } catch (e: any) {
+        if (e.name !== 'AbortError') {
+          console.error("SSE Stream error:", e);
+          // Try to reconnect after 5s if it's not an abort
+          if (active) {
+            setTimeout(() => {
+              if (active) startStream();
+            }, 5000);
+          }
+        }
+      }
+    };
+
+    startStream();
+
+    return () => {
+      active = false;
+      abortController.abort();
+    };
+  }, [cleanUrl]);
 
   const counters = health?.counters || {};
   const totalSendOk = counters.send_ok || 0;
@@ -229,7 +283,7 @@ export const Dashboard = () => {
               ยินดีต้อนรับ, {username || 'ผู้ใช้งาน'}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              ข้อมูลจริงจาก API — อัปเดตอัตโนมัติทุก 15 วินาที
+              ข้อมูลจริงจาก API — อัปเดตอัตโนมัติแบบ Real-time (SSE)
             </p>
           </div>
           <div className="flex gap-2">
