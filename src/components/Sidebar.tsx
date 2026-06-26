@@ -8,7 +8,6 @@ import {
   Sparkles,
   Gauge,
   UserCircle2,
-  Globe,
   X,
   LogOut
 } from 'lucide-react';
@@ -103,7 +102,6 @@ export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
   }, [apiUrl, isAdmin, userToken]);
 
   const cleanApiUrl = apiUrl.replace(/^https?:\/\//, '');
-  const environment = /localhost|127\.0\.0\.1/i.test(cleanApiUrl) ? 'Sandbox' : 'Production';
 
   const getKeyStatus = () => {
     if (isAdmin) return 'Admin';

@@ -111,7 +111,6 @@ print()`,
   };
 
   const currentExample = codeExamples[activeTab];
-  const IconComponent = currentExample.icon;
 
   const tabs: Tab[] = ['curl-linux', 'curl-windows', 'javascript', 'python'];
 

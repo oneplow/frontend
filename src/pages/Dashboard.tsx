@@ -46,7 +46,6 @@ const InteractiveChart = ({
   dataKey,
   color,
   height = 100,
-  label,
   unit = ''
 }: {
   data: TimePoint[];
