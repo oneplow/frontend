@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, ShieldAlert, Key, Trash2, Mail, RefreshCw, UserRoundCheck } from 'lucide-react';
+import { Users, ShieldAlert, Key, Trash2, Edit2, Mail, RefreshCw, UserRoundCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from './KeysPage';
 import { Modal } from '../components/Modal';
@@ -10,6 +10,7 @@ interface UserData {
   created_at: number;
   key?: string | null;
   rpm_limit?: number | null;
+  allowed_models?: string | null;
 }
 
 export const UsersPage = () => {
@@ -39,6 +40,51 @@ export const UsersPage = () => {
   }, [apiUrl, isAdmin, adminKey]);
 
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<string | null>(null);
+  const [editUser, setEditUser] = useState<UserData | null>(null);
+  const [editRpmLimit, setEditRpmLimit] = useState<string>('');
+  const [editExpiresInDays, setEditExpiresInDays] = useState<string>('');
+  const [editAllowedModels, setEditAllowedModels] = useState<string>('');
+  const [editLoading, setEditLoading] = useState(false);
+
+  const openEditModal = (user: UserData) => {
+    setEditUser(user);
+    setEditRpmLimit(user.rpm_limit ? user.rpm_limit.toString() : '60');
+    setEditExpiresInDays(''); // default to empty
+    setEditAllowedModels(user.allowed_models || '');
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    setEditLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/admin/users/${editUser.username}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${adminKey}`
+        },
+        body: JSON.stringify({
+          rpm_limit: editRpmLimit ? parseInt(editRpmLimit) : null,
+          expires_in_days: editExpiresInDays ? parseInt(editExpiresInDays) : null,
+          allowed_models: editAllowedModels.trim() || null
+        })
+      });
+      if (res.ok) {
+        setEditUser(null);
+        fetchUsers();
+      } else {
+        const errData = await res.json();
+        alert(errData.detail || 'Failed to update user');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating user');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   const usersWithKeys = users.filter((user) => user.key).length;
 
   const handleDeleteUser = async () => {
@@ -140,14 +186,24 @@ export const UsersPage = () => {
                       {formatDate(u.created_at)}
                     </td>
                     <td className="text-right">
-                      <button
-                        className="inline-flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
-                        onClick={() => setDeleteUserConfirm(u.username)}
-                        title="Delete User"
-                      >
-                        <Trash2 size={16} />
-                        Delete
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                          onClick={() => openEditModal(u)}
+                          title="Edit User"
+                        >
+                          <Edit2 size={14} />
+                          Edit
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                          onClick={() => setDeleteUserConfirm(u.username)}
+                          title="Delete User"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -172,6 +228,56 @@ export const UsersPage = () => {
             Delete User
           </button>
         </div>
+      </Modal>
+
+      <Modal isOpen={!!editUser} onClose={() => setEditUser(null)} title={`Edit User: ${editUser?.username}`}>
+        {editUser && !editUser.key && (
+          <div className="mb-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-700">
+            This user does not have an API key yet. Modifying these settings will generate a new key for them.
+          </div>
+        )}
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">RPM Limit (max 60)</label>
+            <input
+              type="number"
+              className="input-field"
+              value={editRpmLimit}
+              onChange={(e) => setEditRpmLimit(e.target.value)}
+              min="1"
+              max="60"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Expires in Days</label>
+            <input
+              type="number"
+              className="input-field"
+              value={editExpiresInDays}
+              onChange={(e) => setEditExpiresInDays(e.target.value)}
+              min="1"
+              placeholder="Leave empty to not change expiry"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Allowed Models</label>
+            <input
+              type="text"
+              className="input-field"
+              value={editAllowedModels}
+              onChange={(e) => setEditAllowedModels(e.target.value)}
+              placeholder="e.g. gpt-4o, gemini-3-pro (leave empty for all)"
+            />
+          </div>
+          <div className="mt-6 flex justify-end gap-3">
+            <button type="button" onClick={() => setEditUser(null)} className="btn-secondary px-4 py-2 text-sm">
+              Cancel
+            </button>
+            <button type="submit" disabled={editLoading} className="btn-primary px-4 py-2 text-sm">
+              {editLoading ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Key, Activity, Copy, RefreshCw, Trash2, Clock3, CheckCircle2, Plus, AlertCircle, X, ChevronDown, Search } from 'lucide-react';
+import { Key, Activity, Copy, RefreshCw, Trash2, Edit2, Clock3, CheckCircle2, Plus, AlertCircle, X, ChevronDown, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
 
@@ -57,6 +57,11 @@ export const KeysPage = () => {
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [modelSearchQuery, setModelSearchQuery] = useState('');
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [editTargetKey, setEditTargetKey] = useState<ApiKey | null>(null);
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -123,6 +128,17 @@ export const KeysPage = () => {
 
     setModelSearchQuery('');
     setCreateOpen(true);
+  };
+
+  const openEditModal = (keyObj: ApiKey) => {
+    setEditTargetKey(keyObj);
+    setFormName(keyObj.name || '');
+    setFormRpmLimit(keyObj.rpm_limit !== null ? String(keyObj.rpm_limit) : '');
+    setFormExpiresDays(getRemainingDays(keyObj.expires_at));
+    setFormAllowedModels(keyObj.allowed_models || '');
+    setEditError('');
+    setModelSearchQuery('');
+    setEditOpen(true);
   };
 
   const handleCopyKey = async (value: string) => {
@@ -226,6 +242,59 @@ export const KeysPage = () => {
       console.error(err);
     } finally {
       setDeleteKeyConfirm(null);
+    }
+  };
+
+  const handleEditKey = async () => {
+    if (!editTargetKey) return;
+    setEditLoading(true);
+    setEditError('');
+
+    try {
+      const cleanUrl = apiUrl.replace(/\/$/, '');
+      const rpmValue = formRpmLimit.trim() === '' ? null : Number(formRpmLimit);
+      const expiresValue = formExpiresDays.trim() === '' ? null : Number(formExpiresDays);
+
+      if (rpmValue !== null && Number.isNaN(rpmValue)) {
+        throw new Error('RPM limit ไม่ถูกต้อง');
+      }
+      if (expiresValue !== null && Number.isNaN(expiresValue)) {
+        throw new Error('จำนวนวันหมดอายุไม่ถูกต้อง');
+      }
+
+      const payload = {
+        name: formName.trim() || null,
+        rpm_limit: rpmValue,
+        expires_in_days: expiresValue,
+        allowed_models: formAllowedModels.trim() || null
+      };
+
+      const res = await fetch(`${cleanUrl}/admin/keys/${editTargetKey.key}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${adminKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        let errorMessage = 'Failed to edit key';
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch {
+          errorMessage = await res.text();
+        }
+        throw new Error(errorMessage);
+      }
+
+      setEditOpen(false);
+      await fetchKeys();
+    } catch (error: any) {
+      setEditError(error.message || 'Failed to edit key');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -353,24 +422,36 @@ export const KeysPage = () => {
                         )}
                       </td>
                       <td>
-                        <span className={expired ? 'badge-red' : 'badge-green'}>
-                          {expired ? 'Expired' : 'Active'}
-                        </span>
-                        {!expired && k.expires_at && (
-                          <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500">
-                            <Clock3 size={12} />
-                            {formatDate(k.expires_at)}
-                          </div>
-                        )}
+                        <div className="flex flex-col items-start gap-1">
+                          <span className={expired ? 'badge-red' : 'badge-green'}>
+                            {expired ? 'Expired' : 'Active'}
+                          </span>
+                          {!expired && k.expires_at && (
+                            <div className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                              <Clock3 size={12} />
+                              {formatDate(k.expires_at)}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="text-right">
                         <div className="flex items-center justify-end gap-2">
+                          {isAdmin && (
+                            <button
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                              onClick={() => openEditModal(k)}
+                              title="Edit Key"
+                            >
+                              <Edit2 size={14} />
+                              Edit
+                            </button>
+                          )}
                           <button
-                            className="inline-flex items-center gap-2 rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
                             onClick={() => setDeleteKeyConfirm(k.key)}
                             title="Revoke Key"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={14} />
                             Revoke
                           </button>
                         </div>
@@ -583,6 +664,154 @@ export const KeysPage = () => {
             </button>
             <button onClick={handleCreateKey} disabled={createLoading} className="btn-primary px-4 py-2 text-sm">
               {createLoading ? 'Saving...' : isAdmin ? 'Create Key' : hasExistingUserKey ? 'Update Key' : 'Create Key'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Key Modal (Admin Only) */}
+      <Modal
+        isOpen={editOpen}
+        onClose={() => {
+          setEditOpen(false);
+          setEditError('');
+        }}
+        title="Edit API Key"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-5">
+          {editError && (
+            <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <AlertCircle size={16} />
+              <span>{editError}</span>
+            </div>
+          )}
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Key Name
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Production Key"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                RPM Limit
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="input-field"
+                placeholder="ปล่อยว่างเพื่อ Unlimited"
+                value={formRpmLimit}
+                onChange={(e) => setFormRpmLimit(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Expires in (Days)
+              </label>
+              <input
+                type="number"
+                min="1"
+                className="input-field"
+                placeholder="ปล่อยว่างเพื่อให้ไม่มีวันหมดอายุ"
+                value={formExpiresDays}
+                onChange={(e) => setFormExpiresDays(e.target.value)}
+              />
+            </div>
+
+            <div className="md:col-span-2 relative">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                Allowed Models
+              </label>
+              <div
+                className="input-field min-h-[42px] cursor-pointer flex flex-wrap items-center gap-1.5 relative pr-8"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                {(!formAllowedModels || formAllowedModels.trim() === '') ? (
+                  <span className="text-slate-400">All models allowed (เว้นว่าง)</span>
+                ) : (
+                  formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
+                    <span key={m} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1">
+                      {m}
+                      <X size={12} className="cursor-pointer hover:text-blue-900" onClick={(e) => {
+                        e.stopPropagation();
+                        const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
+                        setFormAllowedModels(updated.join(','));
+                      }} />
+                    </span>
+                  ))
+                )}
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              </div>
+
+              {isDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                  <div className="absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
+                    <div className="p-2 border-b border-slate-100 shrink-0 relative">
+                      <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        className="w-full bg-slate-50 border-none rounded-lg pl-9 pr-3 py-1.5 text-sm focus:ring-0 focus:outline-none"
+                        placeholder="Search models..."
+                        value={modelSearchQuery}
+                        onChange={(e) => setModelSearchQuery(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    <div className="overflow-y-auto p-1">
+                      {availableModels.length === 0 ? (
+                        <div className="p-3 text-sm text-slate-500 text-center">Loading models...</div>
+                      ) : (
+                        availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
+                          <div className="p-3 text-sm text-slate-500 text-center">No models found</div>
+                        ) : (
+                          availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
+                            const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
+                            return (
+                              <label key={model} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    let selected = formAllowedModels.split(',').map(m => m.trim()).filter(Boolean);
+                                    if (isSelected) {
+                                      selected = selected.filter(m => m !== model);
+                                    } else {
+                                      selected.push(model);
+                                    }
+                                    setFormAllowedModels(selected.join(','));
+                                  }}
+                                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm font-medium text-slate-700">{model}</span>
+                              </label>
+                            );
+                          })
+                        )
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+              <p className="mt-2 text-xs text-slate-500">เลือกโมเดลที่ต้องการให้ Key นี้ใช้งานได้ เว้นว่างถ้าต้องการให้ใช้ได้ทั้งหมด</p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <button onClick={() => setEditOpen(false)} className="btn-secondary px-4 py-2 text-sm">
+              Cancel
+            </button>
+            <button onClick={handleEditKey} disabled={editLoading} className="btn-primary px-4 py-2 text-sm">
+              {editLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>
