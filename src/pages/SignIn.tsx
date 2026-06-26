@@ -11,7 +11,7 @@ export const SignIn = () => {
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError('');
-    
+
     try {
       const res = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
@@ -20,7 +20,7 @@ export const SignIn = () => {
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      
+
       loginUser(apiUrl, data.token, data.username);
       navigate('/dashboard');
     } catch (err: any) {
@@ -66,12 +66,6 @@ export const SignIn = () => {
               สมัครสมาชิก
             </Link>
           </div>
-        </div>
-
-        <div className="mt-8 text-center">
-          <Link to="/admin" className="text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600">
-            Admin Area
-          </Link>
         </div>
       </div>
     </div>
