@@ -1,30 +1,41 @@
 import { useEffect, useState } from 'react';
-import { 
-  UserCircle2, 
-  Mail, 
-  Hash, 
-  Calendar, 
+import {
+  UserCircle2,
+  Mail,
+  Hash,
+  Calendar,
   CheckCircle2,
   Info,
   Activity,
   Zap,
   Key,
   Copy,
-  Check
+  Check,
+  ChevronRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PageLoader } from '../components/PageLoader';
 
 interface UserKeyInfo {
   rpm_limit: number | null;
   expires_at: number | null;
 }
 
+interface TokenInfo {
+  token_limit: number | null;
+  tokens_used: number;
+  token_reset_period: string;
+  token_last_reset: number | null;
+}
+
 export const ProfilePage = () => {
   const { username, isAdmin, userToken, apiUrl } = useAuth();
   const [keyInfo, setKeyInfo] = useState<UserKeyInfo | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [loading, setLoading] = useState(!isAdmin);
   const [copiedToken, setCopiedToken] = useState(false);
-  
+
   const email = isAdmin ? 'admin@easy-ai.local' : 'user@easy-ai.local';
   const roleName = isAdmin ? 'Administrator' : 'User';
   const generateId = (str: string) => {
@@ -34,32 +45,36 @@ export const ProfilePage = () => {
   };
 
   const userId = username ? generateId(username) : 'N/A';
-  // If we can't get created_at from backend for normal users, we display Not Available
   const joinDate = 'Unknown';
 
   useEffect(() => {
     let cancelled = false;
-    const fetchKeyInfo = async () => {
+    const fetchData = async () => {
       if (isAdmin || !userToken) {
         setLoading(false);
         return;
       }
+      const cleanUrl = apiUrl.replace(/\/$/, '');
       try {
-        const cleanUrl = apiUrl.replace(/\/$/, '');
-        const res = await fetch(`${cleanUrl}/user/keys`, {
-          headers: { Authorization: `Bearer ${userToken}` }
-        });
-        if (!cancelled && res.ok) {
-          const data = await res.json();
+        const [keysRes, tokensRes] = await Promise.all([
+          fetch(`${cleanUrl}/user/keys`, { headers: { Authorization: `Bearer ${userToken}` } }),
+          fetch(`${cleanUrl}/user/tokens`, { headers: { Authorization: `Bearer ${userToken}` } })
+        ]);
+        if (!cancelled && keysRes.ok) {
+          const data = await keysRes.json();
           setKeyInfo(data.key || null);
         }
+        if (!cancelled && tokensRes.ok) {
+          const data = await tokensRes.json();
+          setTokenInfo(data);
+        }
       } catch (err) {
-        console.error('Failed to fetch key info', err);
+        console.error('Failed to fetch profile data', err);
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
-    fetchKeyInfo();
+    fetchData();
     return () => { cancelled = true; };
   }, [apiUrl, isAdmin, userToken]);
 
@@ -74,7 +89,7 @@ export const ProfilePage = () => {
         textArea.style.left = "-999999px";
         document.body.prepend(textArea);
         textArea.select();
-        try { document.execCommand('copy'); } catch(e) {}
+        try { document.execCommand('copy'); } catch (e) { }
         textArea.remove();
       }
       setCopiedToken(true);
@@ -104,25 +119,66 @@ export const ProfilePage = () => {
   const getExpirationPercentage = () => {
     if (isAdmin || !keyInfo || !keyInfo.expires_at) return 100;
     const now = Date.now() / 1000;
-    const totalDuration = 30 * 24 * 60 * 60; // Assume 30 days total for visual
+    const totalDuration = 30 * 24 * 60 * 60;
     const remaining = Math.max(0, keyInfo.expires_at - now);
     return Math.min(100, (remaining / totalDuration) * 100);
   };
 
+  const getTokenDisplay = () => {
+    if (isAdmin) return 'Unlimited';
+    if (!tokenInfo || tokenInfo.token_limit === null) return 'Unlimited';
+    return `${(tokenInfo.tokens_used || 0).toLocaleString()} / ${tokenInfo.token_limit.toLocaleString()}`;
+  };
+
+  const getTokenPercentage = () => {
+    if (isAdmin || !tokenInfo || tokenInfo.token_limit === null) return 0;
+    return Math.min(100, ((tokenInfo.tokens_used || 0) / tokenInfo.token_limit) * 100);
+  };
+
+  const getTokenBarColor = () => {
+    const pct = getTokenPercentage();
+    if (pct >= 90) return 'bg-red-400';
+    if (pct >= 70) return 'bg-amber-400';
+    return 'bg-emerald-400';
+  };
+
+  const progressTrackStyle = { backgroundColor: 'var(--app-border)' };
+
   return (
-    <div className="space-y-5 w-full pb-8">
+    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 space-y-6 w-full">
+      {loading && <PageLoader />}
+      <div className="mb-2 flex items-center text-[15px] font-medium app-muted">
+        <Link to="/dashboard" className="text-blue-600 hover:text-blue-500 hover:underline transition-colors">Overview</Link>
+        <ChevronRight size={14} className="mx-2 opacity-50" />
+        <span className="app-text">Profile</span>
+      </div>
       {/* Header */}
-      <div className="surface-card rounded-2xl p-4 flex items-center gap-3">
+      <div className="surface-card flex items-center gap-3 rounded-xl p-5 shadow-sm">
         <UserCircle2 size={20} className="text-blue-500" />
-        <h1 className="text-[15px] font-bold text-slate-800">My Profile</h1>
+        <h1 className="text-xl font-bold app-text">My Profile</h1>
       </div>
 
       {/* Profile Banner */}
       <div className="surface-card rounded-[28px] p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50/40 via-transparent to-purple-50/20 pointer-events-none"></div>
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(59,130,246,0.16) 0%, rgba(59,130,246,0.06) 35%, rgba(139,92,246,0.08) 100%)',
+          }}
+        ></div>
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="h-24 w-24 shrink-0 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 p-1 shadow-sm border border-white">
-            <div className="h-full w-full rounded-xl bg-white/60 flex items-center justify-center text-blue-500 backdrop-blur-sm">
+          <div
+            className="h-24 w-24 shrink-0 rounded-2xl p-1 shadow-sm"
+            style={{
+              background: 'linear-gradient(135deg, rgba(96,165,250,0.32), rgba(99,102,241,0.24))',
+              border: '1px solid var(--app-border)',
+            }}
+          >
+            <div
+              className="flex h-full w-full items-center justify-center rounded-xl text-blue-500 backdrop-blur-sm"
+              style={{ backgroundColor: 'color-mix(in srgb, var(--app-surface) 84%, transparent)' }}
+            >
               {username ? (
                 <span className="text-4xl font-bold">{username.charAt(0).toUpperCase()}</span>
               ) : (
@@ -130,24 +186,27 @@ export const ProfilePage = () => {
               )}
             </div>
           </div>
-          
+
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3 mb-1.5">
-              <h2 className="text-2xl font-bold text-slate-900 truncate">
+              <h2 className="truncate text-2xl font-bold app-text">
                 {username || roleName}
               </h2>
-              <div className="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 px-2 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200/50 uppercase tracking-wide">
+              <div
+                className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-500"
+                style={{ backgroundColor: 'rgba(16, 185, 129, 0.12)', borderColor: 'rgba(16, 185, 129, 0.18)' }}
+              >
                 <CheckCircle2 size={12} />
                 ACTIVE
               </div>
             </div>
-            
-            <div className="flex items-center gap-2 text-slate-500 text-[13px] mb-3">
+
+            <div className="mb-3 flex items-center gap-2 text-[13px] app-muted">
               <Mail size={14} className="shrink-0" />
               <span className="truncate">{email}</span>
             </div>
-            
-            <div className="flex flex-wrap items-center gap-5 text-slate-400 text-xs font-medium">
+
+            <div className="flex flex-wrap items-center gap-5 text-xs font-medium app-muted">
               <div className="flex items-center gap-1.5">
                 <Hash size={14} />
                 ID: {userId}
@@ -163,34 +222,35 @@ export const ProfilePage = () => {
 
       {/* Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        
+
         {/* Left Column - Configs */}
         <div className="surface-card rounded-[24px] p-5 lg:col-span-1">
-          <div className="flex items-center gap-2 text-slate-800 font-bold mb-4 text-sm">
+          <div className="mb-4 flex items-center gap-2 text-sm font-bold app-text">
             <Info size={16} className="text-blue-500" />
             Account Config
           </div>
-          
+
           <div>
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <label className="mb-2 block text-[10px] font-bold uppercase tracking-widest app-muted">
               Your Access Token
             </label>
             <div className="relative">
-              <input 
-                type="text" 
-                value={userToken || 'Not authenticated'} 
-                readOnly 
-                className="w-full rounded-xl border-none bg-slate-50/80 px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 shadow-inner focus:outline-none"
+              <input
+                type="text"
+                value={userToken || 'Not authenticated'}
+                readOnly
+                className="app-input-field w-full rounded-xl px-4 py-2.5 pr-10 text-sm font-medium shadow-inner focus:outline-none"
+                style={{ backgroundColor: 'var(--app-surface-muted)' }}
               />
-              <button 
+              <button
                 onClick={handleCopyToken}
-                className="absolute right-2 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-lg bg-white text-slate-400 shadow-sm hover:text-blue-600 transition-colors"
+                className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg shadow-sm transition-colors app-button-secondary app-muted hover:text-blue-600"
                 title="Copy Token"
               >
                 {copiedToken ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
               </button>
             </div>
-            <p className="mt-2 text-[11px] text-slate-400">
+            <p className="mt-2 text-[11px] app-muted">
               ใช้ Token นี้ในการยืนยันตัวตนสำหรับเรียกใช้งาน API ของ Easy-AI
             </p>
           </div>
@@ -198,7 +258,7 @@ export const ProfilePage = () => {
 
         {/* Right Column - Quotas */}
         <div className="surface-card rounded-[28px] p-6 lg:col-span-1">
-          <div className="flex items-center gap-2 text-slate-800 font-bold mb-6 text-sm">
+          <div className="mb-6 flex items-center gap-2 text-sm font-bold app-text">
             <Activity size={18} className="text-purple-500" />
             Quotas & Usage
           </div>
@@ -208,17 +268,17 @@ export const ProfilePage = () => {
             <div>
               <div className="flex justify-between items-end mb-1">
                 <div>
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                  <div className="flex items-center gap-1.5 text-sm font-bold app-text">
                     <Zap size={16} className="text-blue-500" />
                     API Requests Limit
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">ขีดจำกัดคำขอ API ต่อนาที</div>
+                  <div className="mt-0.5 text-[11px] app-muted">ขีดจำกัดคำขอ API ต่อนาที</div>
                 </div>
-                <div className="text-sm font-bold text-slate-900">
+                <div className="text-sm font-bold app-text">
                   {loading ? '...' : getRpmDisplay()}
                 </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 mt-2">
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full" style={progressTrackStyle}>
                 <div className="h-full bg-blue-400 rounded-full" style={{ width: `${getRpmPercentage()}%` }}></div>
               </div>
             </div>
@@ -227,40 +287,39 @@ export const ProfilePage = () => {
             <div className="pt-2">
               <div className="flex justify-between items-end mb-1">
                 <div>
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
+                  <div className="flex items-center gap-1.5 text-sm font-bold app-text">
                     <Key size={16} className="text-indigo-500" />
                     Key Expiration
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">วันหมดอายุของคีย์</div>
+                  <div className="mt-0.5 text-[11px] app-muted">วันหมดอายุของคีย์</div>
                 </div>
-                <div className="text-sm font-bold text-slate-900">
+                <div className="text-sm font-bold app-text">
                   {loading ? '...' : getExpirationDisplay()}
                 </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 mt-2">
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full" style={progressTrackStyle}>
                 <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${getExpirationPercentage()}%` }}></div>
               </div>
             </div>
 
-            {/* Limit 3 */}
+            {/* Limit 3: Token Quota */}
             <div className="pt-2">
               <div className="flex justify-between items-end mb-1">
                 <div>
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-slate-700">
-                    <UserCircle2 size={16} className="text-emerald-500" />
-                    Account Role
+                  <div className="flex items-center gap-1.5 text-sm font-bold app-text">
+                    <Activity size={16} className="text-emerald-500" />
+                    Token Balance
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">ระดับสิทธิ์ผู้ใช้งานปัจจุบัน</div>
+                  <div className="mt-0.5 text-[11px] app-muted">ปริมาณ Token คงเหลือ</div>
                 </div>
-                <div className="text-sm font-bold text-slate-900">
-                  <span className="text-emerald-600">{roleName}</span>
+                <div className="text-sm font-bold app-text">
+                  {loading ? '...' : getTokenDisplay()}
                 </div>
               </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 mt-2">
-                <div className="h-full bg-emerald-400 rounded-full" style={{ width: '100%' }}></div>
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full" style={progressTrackStyle}>
+                <div className={`h-full rounded-full transition-all ${getTokenBarColor()}`} style={{ width: `${getTokenPercentage()}%` }}></div>
               </div>
             </div>
-            
           </div>
         </div>
       </div>

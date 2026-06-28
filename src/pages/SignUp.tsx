@@ -1,13 +1,18 @@
 import { useState } from 'react';
-import { UserPlus, AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, UserPlus } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
+import { AppControls } from '../components/AppControls';
+import { siteCopy } from '../content/siteCopy';
+import { useAppSettings } from '../context/AppSettingsContext';
 import { useAuth } from '../context/AuthContext';
 
 export const SignUp = () => {
   const [error, setError] = useState('');
   const { apiUrl, loginUser } = useAuth();
+  const { language } = useAppSettings();
   const navigate = useNavigate();
+  const copy = siteCopy[language];
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError('');
@@ -24,21 +29,29 @@ export const SignUp = () => {
       loginUser(apiUrl, data.token, data.username);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Registration failed');
+      setError(err.message || copy.auth.registrationFailed);
     }
   };
 
   return (
-    <div className="page-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
+    <div className="page-shell auth-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
+        <Link to="/" className="inline-flex items-center gap-2 rounded-full app-button-secondary px-4 py-2 text-sm font-medium">
+          <ArrowLeft size={16} />
+          {copy.auth.backHome}
+        </Link>
+        <AppControls />
+      </div>
+
       <div className="w-full max-w-md">
         <div className="surface-card rounded-[36px] p-6 sm:p-8">
           <div className="mb-7">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
               <UserPlus size={24} />
             </div>
-            <h2 className="mt-5 text-3xl font-semibold text-slate-900">Create account</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              สมัครสมาชิกเพื่อใช้งานพอร์ทัลและรับสิทธิ์เข้าถึง API key ของคุณ
+            <h2 className="mt-5 text-3xl font-semibold app-text">{copy.auth.signUpTitle}</h2>
+            <p className="mt-2 text-sm leading-6 app-muted">
+              {copy.auth.signUpDescription}
             </p>
           </div>
 
@@ -52,7 +65,7 @@ export const SignUp = () => {
           <div className="flex justify-center mt-6">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => setError('Google Sign-Up failed')}
+              onError={() => setError(copy.auth.googleSignUpFailed)}
               useOneTap
               theme="outline"
               size="large"
@@ -61,10 +74,10 @@ export const SignUp = () => {
             />
           </div>
 
-          <div className="mt-8 text-center text-sm text-slate-500">
-            มีบัญชีผู้ใช้อยู่แล้ว?{' '}
+          <div className="mt-8 text-center text-sm app-muted">
+            {copy.auth.alreadyHaveAccount}{' '}
             <Link to="/sign-in" className="font-semibold text-blue-600 hover:text-blue-700">
-              เข้าสู่ระบบ
+              {copy.auth.signInLink}
             </Link>
           </div>
         </div>

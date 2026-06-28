@@ -5,7 +5,46 @@
   <meta charset="UTF-8" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f7fb" />
   <title>Easy AI</title>
+  <script>
+    (function () {
+      var themeKey = 'APP_THEME';
+      var languageKey = 'APP_LANGUAGE';
+      var savedTheme = localStorage.getItem(themeKey);
+      var savedLanguage = localStorage.getItem(languageKey);
+      var theme =
+        savedTheme === 'light' || savedTheme === 'dark'
+          ? savedTheme
+          : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      var language =
+        savedLanguage === 'en' || savedLanguage === 'th'
+          ? savedLanguage
+          : (navigator.language && navigator.language.toLowerCase().startsWith('th') ? 'th' : 'en');
+      var background = theme === 'dark' ? '#081120' : '#f5f7fb';
+      var text = theme === 'dark' ? '#e2e8f0' : '#0f172a';
+      var root = document.documentElement;
+      var themeColorMeta = document.querySelector('meta[name="theme-color"]');
+
+      root.lang = language;
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme;
+      root.style.backgroundColor = background;
+      root.style.color = text;
+
+      if (themeColorMeta) {
+        themeColorMeta.setAttribute('content', background);
+      }
+
+      document.write(
+        '<style>html,body{margin:0;min-height:100%;background:' +
+          background +
+          ';color:' +
+          text +
+          ';}</style>',
+      );
+    })();
+  </script>
 </head>
 
 <body>

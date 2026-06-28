@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Key, Activity, Copy, RefreshCw, Trash2, Edit2, Clock3, CheckCircle2, Plus, AlertCircle, X, ChevronDown, Search } from 'lucide-react';
+import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, Clock3, X, ChevronDown, Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
+import { PageLoader } from '../components/PageLoader';
 
 // --- Shared Types & Utils ---
 export interface ApiKey {
@@ -12,6 +14,8 @@ export interface ApiKey {
   rpm_limit: number | null;
   allowed_models: string | null;
   owner_username?: string | null;
+  token_limit?: number | null;
+  tokens_used?: number | null;
 }
 
 export const formatDate = (timestamp: number) => {
@@ -44,7 +48,7 @@ const getRemainingDays = (expiresAt: number | null) => {
 export const KeysPage = () => {
   const { apiUrl, userToken, adminKey, isAdmin } = useAuth();
   const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
@@ -103,9 +107,10 @@ export const KeysPage = () => {
   }, [apiUrl, isAdmin, adminKey, userToken]);
 
   const [deleteKeyConfirm, setDeleteKeyConfirm] = useState<string | null>(null);
+  const panelClass = 'app-panel overflow-hidden rounded-xl';
 
-  const activeKeys = keys.filter((key) => !isExpired(key.expires_at)).length;
-  const limitedKeys = keys.filter((key) => key.rpm_limit).length;
+  // const activeKeys = filteredKeys.filter(k => k.status === 'active').length;
+  // const limitedKeys = filteredKeys.filter(k => k.status === 'limited').length;
   const hasExistingUserKey = !isAdmin && keys.length > 0;
 
   const openCreateModal = () => {
@@ -299,146 +304,161 @@ export const KeysPage = () => {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="surface-card rounded-2xl p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-bold text-slate-800">API Keys</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              จัดการคีย์การเข้าถึง ดูสถานะการหมดอายุ และตรวจสอบข้อจำกัดการใช้งานในหน้าเดียว
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={openCreateModal} className="btn-primary !py-2 !px-4 text-sm">
-              <Plus size={14} />
-              {isAdmin ? 'Create Key' : hasExistingUserKey ? 'Update Key' : 'Create Key'}
-            </button>
-            <button onClick={fetchKeys} className="btn-secondary !py-2 !px-4 text-sm">
-              <RefreshCw size={14} />
-              Refresh
-            </button>
-          </div>
+    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20">
+      {loading && <PageLoader />}
+
+      <div className="mb-6 flex items-center text-[15px] font-medium app-muted">
+        <Link to="/dashboard" className="text-blue-600 hover:text-blue-500 hover:underline transition-colors">Overview</Link>
+        <ChevronRight size={14} className="mx-2 opacity-50" />
+        <span className="app-text">API keys</span>
+      </div>
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold tracking-tight app-text">API keys</h1>
+          <p className="text-sm app-muted">Create and manage keys for programmatic access to the gateway.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={fetchKeys} className="app-button-secondary inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium">
+            <RefreshCw size={16} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button onClick={openCreateModal} className="app-button-primary inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium">
+            <Plus size={16} />
+            {isAdmin ? 'Create key' : hasExistingUserKey ? 'Update key' : 'Create key'}
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="surface-card rounded-[28px] p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
-            <Key size={18} />
-          </div>
-          <div className="mt-4 text-sm text-slate-500">Total Keys</div>
-          <div className="mt-1 text-3xl font-semibold text-slate-900">{keys.length}</div>
-        </div>
-        <div className="surface-card rounded-[28px] p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-            <CheckCircle2 size={18} />
-          </div>
-          <div className="mt-4 text-sm text-slate-500">Active Keys</div>
-          <div className="mt-1 text-3xl font-semibold text-slate-900">{activeKeys}</div>
-        </div>
-        <div className="surface-card rounded-[28px] p-5">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
-            <Activity size={18} />
-          </div>
-          <div className="mt-4 text-sm text-slate-500">Rate Limited</div>
-          <div className="mt-1 text-3xl font-semibold text-slate-900">{limitedKeys}</div>
-        </div>
-      </div>
-
-      <div className="surface-card overflow-hidden rounded-[32px]">
-        {loading ? (
-          <div className="p-10 text-center text-slate-500">Loading keys...</div>
-        ) : keys.length === 0 ? (
-          <div className="py-24 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-              <Key size={24} />
-            </div>
-            <h3 className="mt-5 text-lg font-semibold text-slate-900">No API Keys</h3>
-            <p className="mt-2 text-slate-500">ยังไม่พบคีย์ที่พร้อมใช้งานในบัญชีนี้</p>
-            <button onClick={openCreateModal} className="btn-primary mx-auto mt-6">
-              <Plus size={16} />
-              {isAdmin ? 'Create First Key' : 'Create Your Key'}
-            </button>
-          </div>
-        ) : (
+        <div className={panelClass}>
           <div className="overflow-x-auto">
-            <table className="data-table text-left">
+            <table className="w-full text-left text-sm whitespace-nowrap">
               <thead>
-                <tr>
-                  <th>Name / Owner</th>
-                  <th>API Key</th>
-                  <th>Models</th>
-                  <th>Limit (RPM)</th>
-                  <th>Status</th>
-                  <th className="text-right">Actions</th>
+                <tr
+                  className="text-xs font-semibold tracking-wider uppercase app-muted"
+                  style={{
+                    borderBottom: '1px solid var(--app-border)',
+                    backgroundColor: 'var(--app-surface-muted)',
+                  }}
+                >
+                  <th className="px-6 py-4">Name / Owner</th>
+                  <th className="px-6 py-4">API Key</th>
+                  <th className="px-6 py-4">Models</th>
+                  <th className="px-6 py-4">Limit (RPM)</th>
+                  <th className="px-6 py-4">Tokens</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
                 {keys.map((k) => {
                   const expired = isExpired(k.expires_at);
                   return (
-                    <tr key={k.key}>
-                      <td>
-                        <div className="font-semibold text-slate-900">{k.name || 'Untitled key'}</div>
+                    <tr
+                      key={k.key}
+                      className="transition-colors"
+                      style={{ borderBottom: '1px solid var(--app-border)' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--app-surface-muted)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      <td className="px-6 py-4">
+                        <div className="font-semibold app-text">{k.name || 'Untitled key'}</div>
                         {isAdmin && (
-                          <div className="mt-1 text-xs text-slate-500">
+                          <div className="mt-1 text-xs app-muted">
                             Owner: {k.owner_username || 'Admin'}
                           </div>
                         )}
                       </td>
-                      <td>
+                      <td className="px-6 py-4">
                         <button
                           type="button"
-                          className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
                           onClick={() => handleCopyKey(k.key)}
                           title="Click to copy"
+                          style={{
+                            border: '1px solid var(--app-border)',
+                            backgroundColor: 'var(--app-surface-muted)',
+                            color: 'var(--app-text)',
+                          }}
                         >
                           <Copy size={14} />
-                          {maskApiKey(k.key)}
-                          {copiedKey === k.key && <span className="text-xs text-blue-500">Copied</span>}
+                          <code className="text-xs">{maskApiKey(k.key)}</code>
+                          {copiedKey === k.key && <span className="text-xs text-emerald-600 font-medium">Copied</span>}
                         </button>
                       </td>
-                      <td className="text-sm text-slate-600">
+                      <td className="px-6 py-4 text-sm app-muted">
                         {k.allowed_models ? (
                           <div className="flex flex-wrap gap-1">
                             {k.allowed_models.split(',').map((m) => (
-                              <span key={m} className="badge-blue">
+                              <span
+                                key={m}
+                                className="inline-flex items-center rounded-md px-2 py-1 text-[11px] font-medium"
+                                style={{
+                                  backgroundColor: 'rgba(59, 130, 246, 0.14)',
+                                  color: 'var(--app-accent)',
+                                  border: '1px solid rgba(59, 130, 246, 0.18)',
+                                }}
+                              >
                                 {m.trim()}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-500">All Models</span>
+                          <span className="app-muted">All Models</span>
                         )}
                       </td>
-                      <td>
+                      <td className="px-6 py-4">
                         {k.rpm_limit ? (
-                          <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1.5 text-sm font-medium text-sky-700">
-                            <Activity size={14} />
+                          <div
+                            className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium"
+                            style={{
+                              border: '1px solid var(--app-border)',
+                              backgroundColor: 'var(--app-surface-muted)',
+                              color: 'var(--app-text)',
+                            }}
+                          >
+                            <Activity size={14} className="app-muted" />
                             {k.rpm_limit} / min
                           </div>
                         ) : (
-                          <span className="text-sm text-slate-500">Unlimited</span>
+                          <span className="app-muted">Unlimited</span>
                         )}
                       </td>
-                      <td>
+                      <td className="px-6 py-4">
+                        {k.token_limit !== null && k.token_limit !== undefined ? (
+                          <div className="flex flex-col gap-1 w-32">
+                            <div className="text-xs font-medium app-text">
+                              {(k.tokens_used || 0).toLocaleString()} / {k.token_limit.toLocaleString()}
+                            </div>
+                            <div className="h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--app-surface-muted)' }}>
+                              <div className="h-full rounded-full bg-emerald-400" style={{ width: `${Math.min(100, ((k.tokens_used || 0) / k.token_limit) * 100)}%` }}></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="app-muted">Unlimited</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
                         <div className="flex flex-col items-start gap-1">
-                          <span className={expired ? 'badge-red' : 'badge-green'}>
+                          <span className={`inline-flex items-center rounded-md px-2 py-1 text-[11px] font-medium ring-1 ring-inset ${expired ? 'bg-red-50 text-red-700 ring-red-600/10' : 'bg-emerald-50 text-emerald-700 ring-emerald-600/10'}`}>
                             {expired ? 'Expired' : 'Active'}
                           </span>
                           {!expired && k.expires_at && (
-                            <div className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                            <div className="inline-flex items-center gap-1.5 text-[11px] app-muted">
                               <Clock3 size={12} />
                               {formatDate(k.expires_at)}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="text-right">
+                      <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           {isAdmin && (
                             <button
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                              className="app-button-secondary inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium shadow-sm"
                               onClick={() => openEditModal(k)}
                               title="Edit Key"
                             >
@@ -447,9 +467,14 @@ export const KeysPage = () => {
                             </button>
                           )}
                           <button
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors shadow-sm"
                             onClick={() => setDeleteKeyConfirm(k.key)}
                             title="Revoke Key"
+                            style={{
+                              border: '1px solid rgba(248, 113, 113, 0.5)',
+                              backgroundColor: 'transparent',
+                              color: '#ef4444',
+                            }}
                           >
                             <Trash2 size={14} />
                             Revoke
@@ -462,18 +487,16 @@ export const KeysPage = () => {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
-
+        </div>
       <Modal isOpen={!!deleteKeyConfirm} onClose={() => setDeleteKeyConfirm(null)} title="Revoke API Key">
-        <div className="mb-6 text-slate-600">
+        <div className="mb-6 app-muted">
           Are you sure you want to revoke this key? Any applications using it will immediately lose access.
         </div>
         <div className="flex justify-end gap-3">
           <button onClick={() => setDeleteKeyConfirm(null)} className="btn-secondary px-4 py-2 text-sm">
             Cancel
           </button>
-          <button onClick={handleDeleteKey} className="rounded-2xl bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700">
+          <button onClick={handleDeleteKey} className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700">
             Revoke Key
           </button>
         </div>
@@ -490,7 +513,7 @@ export const KeysPage = () => {
       >
         <div className="space-y-5">
           {createError && (
-            <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               <AlertCircle size={16} />
               <span>{createError}</span>
             </div>
@@ -499,7 +522,7 @@ export const KeysPage = () => {
           {isAdmin ? (
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   Key Name
                 </label>
                 <input
@@ -511,39 +534,39 @@ export const KeysPage = () => {
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   Custom Key (Optional)
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="ปล่อยว่างเพื่อ generate ให้อัตโนมัติ"
+                  placeholder="Leave empty to auto-generate"
                   value={formCustomKey}
                   onChange={(e) => setFormCustomKey(e.target.value)}
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   RPM Limit
                 </label>
                 <input
                   type="number"
                   min="1"
                   className="input-field"
-                  placeholder="เช่น 120"
+                  placeholder="e.g. 120"
                   value={formRpmLimit}
                   onChange={(e) => setFormRpmLimit(e.target.value)}
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   Expires In (Days)
                 </label>
                 <input
                   type="number"
                   min="1"
                   className="input-field"
-                  placeholder="เว้นว่างได้"
+                  placeholder="Optional"
                   value={formExpiresDays}
                   onChange={(e) => setFormExpiresDays(e.target.value)}
                 />
@@ -552,7 +575,7 @@ export const KeysPage = () => {
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   RPM Limit
                 </label>
                 <input
@@ -563,23 +586,23 @@ export const KeysPage = () => {
                   value={formRpmLimit}
                   onChange={(e) => setFormRpmLimit(e.target.value)}
                 />
-                <p className="mt-2 text-xs text-slate-500">สำหรับ user ระบบจะจำกัดไม่เกิน 60 RPM</p>
+                <p className="mt-2 text-xs app-muted">User limit is capped at 60 RPM</p>
               </div>
               <div>
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   Expires In (Days)
                 </label>
                 <input
                   type="number"
                   min="1"
                   className="input-field"
-                  placeholder="เว้นว่างได้"
+                  placeholder="Optional"
                   value={formExpiresDays}
                   onChange={(e) => setFormExpiresDays(e.target.value)}
                 />
               </div>
               <div className="md:col-span-2 relative">
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                   Allowed Models
                 </label>
                 <div
@@ -587,12 +610,16 @@ export const KeysPage = () => {
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 >
                   {(!formAllowedModels || formAllowedModels.trim() === '') ? (
-                    <span className="text-slate-400">All models allowed (เว้นว่าง)</span>
+                    <span className="app-muted">All models allowed</span>
                   ) : (
                     formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
-                      <span key={m} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1">
+                      <span
+                        key={m}
+                        className="px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1"
+                        style={{ backgroundColor: 'var(--app-surface-muted)', color: 'var(--app-text)' }}
+                      >
                         {m}
-                        <X size={12} className="cursor-pointer hover:text-blue-900" onClick={(e) => {
+                        <X size={12} className="cursor-pointer" onClick={(e) => {
                           e.stopPropagation();
                           const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
                           setFormAllowedModels(updated.join(','));
@@ -600,18 +627,22 @@ export const KeysPage = () => {
                       </span>
                     ))
                   )}
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 app-muted pointer-events-none" />
                 </div>
 
                 {isDropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                    <div className="absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
-                      <div className="p-2 border-b border-slate-100 shrink-0 relative">
-                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="app-select-menu absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-lg z-50 overflow-hidden">
+                      <div className="p-2 shrink-0 relative" style={{ borderBottom: '1px solid var(--app-border)' }}>
+                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 app-muted" />
                         <input
                           type="text"
-                          className="w-full bg-slate-50 border-none rounded-lg pl-9 pr-3 py-1.5 text-sm focus:ring-0 focus:outline-none"
+                          className="w-full rounded-md pl-9 pr-3 py-1.5 text-sm"
+                          style={{
+                            backgroundColor: 'var(--app-surface-muted)',
+                            color: 'var(--app-text)',
+                          }}
                           placeholder="Search models..."
                           value={modelSearchQuery}
                           onChange={(e) => setModelSearchQuery(e.target.value)}
@@ -620,15 +651,15 @@ export const KeysPage = () => {
                       </div>
                       <div className="overflow-y-auto p-1">
                         {availableModels.length === 0 ? (
-                          <div className="p-3 text-sm text-slate-500 text-center">Loading models...</div>
+                          <div className="p-3 text-sm app-muted text-center">Loading models...</div>
                         ) : (
                           availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
-                            <div className="p-3 text-sm text-slate-500 text-center">No models found</div>
+                            <div className="p-3 text-sm app-muted text-center">No models found</div>
                           ) : (
                             availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
                               const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
                               return (
-                                <label key={model} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                                <label key={model} className="app-select-option rounded-md cursor-pointer">
                                   <input
                                     type="checkbox"
                                     checked={isSelected}
@@ -641,9 +672,9 @@ export const KeysPage = () => {
                                       }
                                       setFormAllowedModels(selected.join(','));
                                     }}
-                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                    className="rounded text-blue-600 focus:ring-0"
                                   />
-                                  <span className="text-sm font-medium text-slate-700">{model}</span>
+                                  <span className="text-sm font-medium app-text">{model}</span>
                                 </label>
                               );
                             })
@@ -653,7 +684,7 @@ export const KeysPage = () => {
                     </div>
                   </>
                 )}
-                <p className="mt-2 text-xs text-slate-500">เลือกโมเดลที่ต้องการให้ Key นี้ใช้งานได้ เว้นว่างถ้าต้องการให้ใช้ได้ทั้งหมด</p>
+                <p className="mt-2 text-xs app-muted">Select allowed models for this key. Leave blank to allow all.</p>
               </div>
             </div>
           )}
@@ -681,7 +712,7 @@ export const KeysPage = () => {
       >
         <div className="space-y-5">
           {editError && (
-            <div className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
               <AlertCircle size={16} />
               <span>{editError}</span>
             </div>
@@ -689,7 +720,7 @@ export const KeysPage = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                 Key Name
               </label>
               <input
@@ -701,34 +732,34 @@ export const KeysPage = () => {
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                 RPM Limit
               </label>
               <input
                 type="number"
                 min="1"
                 className="input-field"
-                placeholder="ปล่อยว่างเพื่อ Unlimited"
+                placeholder="Leave blank for Unlimited"
                 value={formRpmLimit}
                 onChange={(e) => setFormRpmLimit(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                 Expires in (Days)
               </label>
               <input
                 type="number"
                 min="1"
                 className="input-field"
-                placeholder="ปล่อยว่างเพื่อให้ไม่มีวันหมดอายุ"
+                placeholder="Leave blank for no expiry"
                 value={formExpiresDays}
                 onChange={(e) => setFormExpiresDays(e.target.value)}
               />
             </div>
 
             <div className="md:col-span-2 relative">
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
                 Allowed Models
               </label>
               <div
@@ -736,12 +767,16 @@ export const KeysPage = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 {(!formAllowedModels || formAllowedModels.trim() === '') ? (
-                  <span className="text-slate-400">All models allowed (เว้นว่าง)</span>
+                  <span className="app-muted">All models allowed</span>
                 ) : (
                   formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
-                    <span key={m} className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1">
+                    <span
+                      key={m}
+                      className="px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1"
+                      style={{ backgroundColor: 'var(--app-surface-muted)', color: 'var(--app-text)' }}
+                    >
                       {m}
-                      <X size={12} className="cursor-pointer hover:text-blue-900" onClick={(e) => {
+                      <X size={12} className="cursor-pointer" onClick={(e) => {
                         e.stopPropagation();
                         const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
                         setFormAllowedModels(updated.join(','));
@@ -749,18 +784,22 @@ export const KeysPage = () => {
                     </span>
                   ))
                 )}
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 app-muted pointer-events-none" />
               </div>
 
               {isDropdownOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                  <div className="absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-xl border border-slate-200 bg-white shadow-lg z-50 overflow-hidden">
-                    <div className="p-2 border-b border-slate-100 shrink-0 relative">
-                      <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <div className="app-select-menu absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-lg z-50 overflow-hidden">
+                    <div className="p-2 shrink-0 relative" style={{ borderBottom: '1px solid var(--app-border)' }}>
+                      <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 app-muted" />
                       <input
                         type="text"
-                        className="w-full bg-slate-50 border-none rounded-lg pl-9 pr-3 py-1.5 text-sm focus:ring-0 focus:outline-none"
+                        className="w-full rounded-md pl-9 pr-3 py-1.5 text-sm"
+                        style={{
+                          backgroundColor: 'var(--app-surface-muted)',
+                          color: 'var(--app-text)',
+                        }}
                         placeholder="Search models..."
                         value={modelSearchQuery}
                         onChange={(e) => setModelSearchQuery(e.target.value)}
@@ -769,15 +808,15 @@ export const KeysPage = () => {
                     </div>
                     <div className="overflow-y-auto p-1">
                       {availableModels.length === 0 ? (
-                        <div className="p-3 text-sm text-slate-500 text-center">Loading models...</div>
+                        <div className="p-3 text-sm app-muted text-center">Loading models...</div>
                       ) : (
                         availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
-                          <div className="p-3 text-sm text-slate-500 text-center">No models found</div>
+                          <div className="p-3 text-sm app-muted text-center">No models found</div>
                         ) : (
                           availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
                             const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
                             return (
-                              <label key={model} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                              <label key={model} className="app-select-option rounded-md cursor-pointer">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
@@ -790,9 +829,9 @@ export const KeysPage = () => {
                                     }
                                     setFormAllowedModels(selected.join(','));
                                   }}
-                                  className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  className="rounded text-blue-600 focus:ring-0"
                                 />
-                                <span className="text-sm font-medium text-slate-700">{model}</span>
+                                <span className="text-sm font-medium app-text">{model}</span>
                               </label>
                             );
                           })
@@ -802,7 +841,7 @@ export const KeysPage = () => {
                   </div>
                 </>
               )}
-              <p className="mt-2 text-xs text-slate-500">เลือกโมเดลที่ต้องการให้ Key นี้ใช้งานได้ เว้นว่างถ้าต้องการให้ใช้ได้ทั้งหมด</p>
+              <p className="mt-2 text-xs app-muted">Select allowed models for this key. Leave blank to allow all.</p>
             </div>
           </div>
 
