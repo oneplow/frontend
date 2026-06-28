@@ -55,6 +55,9 @@ type SiteCopy = {
     registrationFailed: string;
     googleSignInFailed: string;
     googleSignUpFailed: string;
+    googleConfigError: string;
+    googleBackendConfigError: string;
+    googleInvalidTokenError: string;
   };
   header: {
     notifications: string;
@@ -170,6 +173,12 @@ export const siteCopy: Record<AppLanguage, SiteCopy> = {
       registrationFailed: 'Registration failed',
       googleSignInFailed: 'Google Sign-In failed',
       googleSignUpFailed: 'Google Sign-Up failed',
+      googleConfigError:
+        'Google Sign-In is not available for this domain yet. Please check the Google Client ID and Authorized JavaScript Origins settings.',
+      googleBackendConfigError:
+        'Google Sign-In is not configured correctly on the server yet. Please verify the backend Google Client ID configuration.',
+      googleInvalidTokenError:
+        'Google returned an invalid sign-in token. Please try again. If the problem continues, check the Google client configuration.',
     },
     header: {
       notifications: 'Notifications',
@@ -283,6 +292,12 @@ export const siteCopy: Record<AppLanguage, SiteCopy> = {
       registrationFailed: 'สมัครสมาชิกไม่สำเร็จ',
       googleSignInFailed: 'Google Sign-In ไม่สำเร็จ',
       googleSignUpFailed: 'Google Sign-Up ไม่สำเร็จ',
+      googleConfigError:
+        'Google Sign-In ยังไม่พร้อมใช้งานสำหรับโดเมนนี้ โปรดตรวจสอบ Google Client ID และ Authorized JavaScript Origins',
+      googleBackendConfigError:
+        'เซิร์ฟเวอร์ยังตั้งค่า Google Sign-In ไม่ถูกต้อง โปรดตรวจสอบ Google Client ID ฝั่ง backend',
+      googleInvalidTokenError:
+        'Google ส่ง token สำหรับการเข้าสู่ระบบมาไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง หากยังเกิดปัญหาให้ตรวจสอบการตั้งค่า Google client',
     },
     header: {
       notifications: 'การแจ้งเตือน',

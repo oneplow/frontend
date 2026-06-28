@@ -27,11 +27,11 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 const applyThemeToDocument = (theme: AppTheme) => {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
-  document.documentElement.style.backgroundColor = theme === 'dark' ? '#081120' : '#f5f7fb';
+  document.documentElement.style.backgroundColor = theme === 'dark' ? '#0f1115' : '#f5f7fb';
 
   const themeColorMeta = document.querySelector('meta[name="theme-color"]');
   if (themeColorMeta) {
-    themeColorMeta.setAttribute('content', theme === 'dark' ? '#081120' : '#f5f7fb');
+    themeColorMeta.setAttribute('content', theme === 'dark' ? '#0f1115' : '#f5f7fb');
   }
 };
 

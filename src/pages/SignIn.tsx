@@ -10,9 +10,32 @@ import { useAuth } from '../context/AuthContext';
 export const SignIn = () => {
   const [error, setError] = useState('');
   const { apiUrl, loginUser } = useAuth();
-  const { language } = useAppSettings();
+  const { language, theme } = useAppSettings();
   const navigate = useNavigate();
   const copy = siteCopy[language];
+
+  const resolveGoogleErrorMessage = (message: string, fallback: string) => {
+    const normalizedMessage = message.toLowerCase();
+
+    if (
+      normalizedMessage.includes('not allowed for the given client id') ||
+      normalizedMessage.includes('authorized javascript origins') ||
+      normalizedMessage.includes('origin') ||
+      normalizedMessage.includes('client id')
+    ) {
+      return copy.auth.googleConfigError;
+    }
+
+    if (normalizedMessage.includes('google login is not configured')) {
+      return copy.auth.googleBackendConfigError;
+    }
+
+    if (normalizedMessage.includes('invalid google token')) {
+      return copy.auth.googleInvalidTokenError;
+    }
+
+    return message || fallback;
+  };
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
     setError('');
@@ -23,13 +46,29 @@ export const SignIn = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: credentialResponse.credential })
       });
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        let errorMessage = '';
+
+        try {
+          const payload = await res.json();
+          errorMessage =
+            typeof payload?.detail === 'string'
+              ? payload.detail
+              : typeof payload?.message === 'string'
+                ? payload.message
+                : JSON.stringify(payload);
+        } catch {
+          errorMessage = await res.text();
+        }
+
+        throw new Error(resolveGoogleErrorMessage(errorMessage, copy.auth.loginFailed));
+      }
       const data = await res.json();
 
       loginUser(apiUrl, data.token, data.username);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || copy.auth.loginFailed);
+      setError(resolveGoogleErrorMessage(err.message || '', copy.auth.loginFailed));
     }
   };
 
@@ -65,9 +104,9 @@ export const SignIn = () => {
           <div className="flex justify-center mt-6">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
-              onError={() => setError(copy.auth.googleSignInFailed)}
+              onError={() => setError(copy.auth.googleConfigError)}
               useOneTap
-              theme="outline"
+              theme={theme === 'dark' ? 'filled_black' : 'outline'}
               size="large"
               width="100%"
             />
