@@ -110,7 +110,7 @@ export const siteCopy: Record<AppLanguage, SiteCopy> = {
       thai: 'Thai',
     },
     landing: {
-      badge: 'Blue-white AI workspace',
+      badge: 'AI workspace',
       title: 'Manage your AI gateway in one clean dashboard',
       description:
         'Monitor usage, manage API keys, and connect model providers from a modern workspace designed for fast teams.',

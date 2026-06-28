@@ -1,123 +1,174 @@
 import { Link } from 'react-router-dom';
-import { Zap, Shield, Key, ArrowRight, Bot, Cpu, TerminalSquare } from 'lucide-react';
+import { ArrowRight, Bot, Shield, Languages, Sparkles, Zap, Activity, Workflow } from 'lucide-react';
+import { AppControls } from '../components/AppControls';
+import { siteCopy } from '../content/siteCopy';
+import { useAppSettings } from '../context/AppSettingsContext';
 
 export const LandingPage = () => {
+  const { language } = useAppSettings();
+  const copy = siteCopy[language];
+  const featureIcons = [Bot, Shield, Languages] as const;
+  const previewIcons = [Sparkles, Activity, Workflow] as const;
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-blue-500/30 overflow-hidden font-sans">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-[1800px] px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
-              <Zap size={18} className="text-white" />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-white">EasyAI</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link to="/sign-in" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
-              Sign In
+    <div className="page-shell min-h-screen overflow-hidden">
+      <nav
+        className="fixed inset-x-0 top-0 z-50 border-b app-border backdrop-blur-md"
+        style={{ backgroundColor: 'var(--app-bg)' }}
+      >
+        <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" className="inline-flex items-center gap-3">
+            <span className="app-logo-badge h-11 w-11 rounded-2xl">
+              <Zap size={18} className="text-[color:var(--app-accent)]" />
+            </span>
+            <span className="text-lg font-semibold tracking-tight app-text">{copy.common.brand}</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              to="/sign-in"
+              className="hidden text-sm font-medium app-muted transition-colors hover:text-[color:var(--app-text)] sm:inline-flex"
+            >
+              {copy.common.signIn}
             </Link>
-            <Link to="/sign-up" className="hidden sm:inline-flex items-center justify-center rounded-full bg-white px-4 py-1.5 text-sm font-medium text-black hover:bg-zinc-200 transition-colors">
-              Get Started
+            <Link to="/sign-up" className="hidden rounded-full app-button-primary px-4 py-2 text-sm font-semibold sm:inline-flex">
+              {copy.common.signUp}
             </Link>
+            <AppControls compact />
           </div>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 px-6">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-blue-600/20 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-purple-600/10 blur-[100px] rounded-full pointer-events-none" />
-        
-        <div className="relative mx-auto max-w-5xl text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300 mb-8 backdrop-blur-md">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-            v1.0 is now live
-          </div>
-          
-          <h1 className="text-5xl lg:text-7xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-white/40 mb-6 leading-tight">
-            The Ultimate API Gateway <br className="hidden lg:block" /> for AI Models
-          </h1>
-          
-          <p className="mx-auto max-w-2xl text-lg text-zinc-400 mb-10 leading-relaxed">
-            One API key to rule them all. Route requests to Claude, OpenAI, and open-source models with built-in rate limiting, usage tracking, and seamless integrations.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link to="/sign-up" className="group flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-black transition-all hover:bg-zinc-200 hover:scale-105 active:scale-95">
-              Start Building Now
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link to="/docs" className="group flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-medium text-white backdrop-blur-md transition-all hover:bg-white/10">
-              <TerminalSquare size={16} className="text-zinc-400 group-hover:text-white transition-colors" />
-              View Documentation
-            </Link>
-          </div>
-        </div>
-      </section>
+      <main className="px-4 pb-16 pt-28 sm:px-6 lg:px-8 lg:pt-32">
+        <section className="mx-auto grid w-full max-w-7xl gap-8 xl:grid-cols-[minmax(0,1.1fr)_460px] xl:items-center">
+          <div className="space-y-8">
+            <div className="inline-flex items-center gap-2 rounded-full app-pill px-3 py-1.5 text-xs font-semibold">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: 'var(--app-accent)' }}
+              />
+              <span className="app-muted">{copy.landing.badge}</span>
+            </div>
 
-      {/* Features Grid */}
-      <section className="relative py-24 px-6 border-t border-white/5 bg-black/20">
-        <div className="mx-auto w-full max-w-[1800px]">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-white mb-4">Enterprise-grade infrastructure</h2>
-            <p className="text-zinc-400">Everything you need to manage AI API consumption in production.</p>
-          </div>
+            <div className="max-w-4xl space-y-5">
+              <h1 className="text-4xl font-semibold tracking-tight app-text sm:text-5xl lg:text-6xl">
+                {copy.landing.title}
+              </h1>
+              <p className="max-w-3xl text-base leading-8 app-muted sm:text-lg">
+                {copy.landing.description}
+              </p>
+            </div>
 
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                icon: <Bot size={24} className="text-blue-400" />,
-                title: 'Multi-Model Routing',
-                desc: 'Seamlessly switch between Anthropic, OpenAI, and local models without changing your codebase.'
-              },
-              {
-                icon: <Shield size={24} className="text-emerald-400" />,
-                title: 'Rate Limiting & Quotas',
-                desc: 'Set strict RPM and token limits per user or API key to prevent unexpected billing surprises.'
-              },
-              {
-                icon: <Key size={24} className="text-purple-400" />,
-                title: 'Key Management',
-                desc: 'Generate, revoke, and monitor API keys. Issue temporary keys with automated expiration.'
-              },
-              {
-                icon: <Cpu size={24} className="text-amber-400" />,
-                title: 'Real-time Analytics',
-                desc: 'Track latency, token usage, and error rates across all your downstream providers instantly.'
-              },
-              {
-                icon: <TerminalSquare size={24} className="text-rose-400" />,
-                title: 'Universal Compatibility',
-                desc: '100% compatible with the OpenAI API format. Drop it into LangChain, LlamaIndex, or Cursor.'
-              },
-              {
-                icon: <Zap size={24} className="text-cyan-400" />,
-                title: 'Edge Optimized',
-                desc: 'Minimal overhead proxy written for maximum throughput and ultra-low latency routing.'
-              }
-            ].map((feat, idx) => (
-              <div key={idx} className="group rounded-2xl border border-white/5 bg-white/[0.02] p-8 transition-all hover:bg-white/[0.04] hover:border-white/10">
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 border border-white/10 shadow-inner group-hover:scale-110 transition-transform">
-                  {feat.icon}
-                </div>
-                <h3 className="mb-2 text-lg font-semibold text-white">{feat.title}</h3>
-                <p className="text-sm leading-relaxed text-zinc-400">{feat.desc}</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link to="/sign-up" className="app-button-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
+                {copy.landing.primaryCta}
+                <ArrowRight size={16} />
+              </Link>
+              <Link to="/dashboard" className="app-button-secondary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
+                {copy.landing.secondaryCta}
+              </Link>
+            </div>
+
+            <div className="app-panel-subtle rounded-[28px] p-5 sm:p-6">
+              <div className="text-sm font-semibold app-text">{copy.landing.socialProofLabel}</div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {copy.landing.socialProofItems.map((item) => (
+                  <span key={item} className="rounded-full app-pill px-3 py-1.5 text-sm">
+                    {item}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-6">
-        <div className="mx-auto w-full max-w-[1800px] flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Zap size={16} className="text-zinc-500" />
-            <span className="text-sm font-semibold text-zinc-500">EasyAI</span>
+          <div className="surface-card rounded-[32px] p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-semibold app-text">{copy.landing.previewTitle}</div>
+                <p className="mt-2 text-sm leading-6 app-muted">{copy.landing.previewDescription}</p>
+              </div>
+              <span
+                className="rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  backgroundColor: 'var(--app-accent-soft)',
+                  color: 'var(--app-accent)',
+                }}
+              >
+                {copy.landing.liveBadge}
+              </span>
+            </div>
+
+            <div className="mt-6 rounded-[28px] app-panel-subtle p-5">
+              <div className="grid gap-4">
+                {copy.landing.previewCards.map((card, index) => {
+                  const Icon = previewIcons[index] ?? Sparkles;
+
+                  return (
+                    <div key={card.label} className="rounded-[22px] app-panel px-4 py-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="text-sm font-medium app-muted">{card.label}</div>
+                          <div className="mt-2 text-3xl font-semibold app-text">{card.value}</div>
+                          <div className="mt-2 text-sm app-muted">{card.caption}</div>
+                        </div>
+                        <span
+                          className="inline-flex h-11 w-11 items-center justify-center rounded-2xl"
+                          style={{
+                            backgroundColor: 'var(--app-accent-soft)',
+                            color: 'var(--app-accent)',
+                          }}
+                        >
+                          <Icon size={18} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-zinc-600">
-            © {new Date().getFullYear()} EasyAI Gateway. All rights reserved.
+        </section>
+
+        <section className="mx-auto mt-10 w-full max-w-7xl border-t app-border pt-10 sm:mt-14 sm:pt-14">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight app-text">{copy.landing.featureTitle}</h2>
+            <p className="mt-4 text-base leading-7 app-muted">{copy.landing.featureDescription}</p>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            {copy.landing.features.map((feature, index) => {
+              const Icon = featureIcons[index] ?? Bot;
+
+              return (
+                <div key={feature.title} className="surface-card rounded-[28px] p-6 transition-transform duration-200 hover:-translate-y-0.5">
+                  <span
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-2xl"
+                    style={{
+                      backgroundColor: 'var(--app-accent-soft)',
+                      color: 'var(--app-accent)',
+                    }}
+                  >
+                    <Icon size={20} />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold app-text">{feature.title}</h3>
+                  <p className="mt-3 text-sm leading-7 app-muted">{feature.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t app-border px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
+          <div className="inline-flex items-center gap-2">
+            <span className="app-logo-badge h-9 w-9 rounded-xl">
+              <Zap size={15} className="text-[color:var(--app-accent)]" />
+            </span>
+            <span className="text-sm font-semibold app-text">{copy.common.brand}</span>
+          </div>
+          <p className="text-xs app-muted">
+            © {new Date().getFullYear()} {copy.common.brand}
           </p>
         </div>
       </footer>
