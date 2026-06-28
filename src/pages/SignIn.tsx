@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { AlertCircle, ArrowLeft, KeyRound } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import type { TokenResponse } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
 import { AppControls } from '../components/AppControls';
+import { GoogleAuthButton } from '../components/GoogleAuthButton';
 import { siteCopy } from '../content/siteCopy';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { useAuth } from '../context/AuthContext';
@@ -10,11 +11,11 @@ import { useAuth } from '../context/AuthContext';
 export const SignIn = () => {
   const [error, setError] = useState('');
   const { apiUrl, loginUser } = useAuth();
-  const { language, theme } = useAppSettings();
+  const { language } = useAppSettings();
   const navigate = useNavigate();
   const copy = siteCopy[language];
 
-  const resolveGoogleErrorMessage = (message: string, fallback: string) => {
+  const resolveGoogleErrorMessage = useCallback((message: string, fallback: string) => {
     const normalizedMessage = message.toLowerCase();
 
     if (
@@ -35,16 +36,16 @@ export const SignIn = () => {
     }
 
     return message || fallback;
-  };
+  }, [copy.auth.googleBackendConfigError, copy.auth.googleConfigError, copy.auth.googleInvalidTokenError]);
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
+  const handleGoogleSuccess = useCallback(async (tokenResponse: TokenResponse) => {
     setError('');
 
     try {
       const res = await fetch(`${apiUrl}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential: credentialResponse.credential })
+        body: JSON.stringify({ access_token: tokenResponse.access_token })
       });
       if (!res.ok) {
         let errorMessage = '';
@@ -70,7 +71,11 @@ export const SignIn = () => {
     } catch (err: any) {
       setError(resolveGoogleErrorMessage(err.message || '', copy.auth.loginFailed));
     }
-  };
+  }, [apiUrl, copy.auth.loginFailed, loginUser, navigate, resolveGoogleErrorMessage]);
+
+  const handleGoogleError = useCallback((message?: string) => {
+    setError(resolveGoogleErrorMessage(message || '', copy.auth.googleConfigError));
+  }, [copy.auth.googleConfigError, resolveGoogleErrorMessage]);
 
   return (
     <div className="page-shell auth-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
@@ -101,16 +106,7 @@ export const SignIn = () => {
             </div>
           )}
 
-          <div className="flex justify-center mt-6">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setError(copy.auth.googleConfigError)}
-              useOneTap
-              theme={theme === 'dark' ? 'filled_black' : 'outline'}
-              size="large"
-              width="100%"
-            />
-          </div>
+          <GoogleAuthButton onSuccess={handleGoogleSuccess} onError={handleGoogleError} />
 
           <div className="mt-8 text-center text-sm app-muted">
             {copy.auth.noAccount}{' '}
