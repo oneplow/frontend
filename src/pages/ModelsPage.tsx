@@ -1,4 +1,4 @@
-import { Copy, Image as ImageIcon, Loader2, Search, ChevronRight, Type } from 'lucide-react';
+import { Copy, Image as ImageIcon, Loader2, Search, ChevronRight, ChevronLeft, Type } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -210,6 +210,7 @@ export const ModelsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [tierFilter, setTierFilter] = useState('all');
   const [accessFilter, setAccessFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   const copy =
     language === 'th'
       ? {
@@ -301,10 +302,18 @@ export const ModelsPage = () => {
     return matchesSearch && matchesTier && matchesAccess;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, tierFilter, accessFilter]);
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+  const paginatedModels = filteredModels.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const panelClass = 'app-panel overflow-hidden rounded-xl';
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20">
       {loading && <PageLoader />}
 
       <div className="mb-6 flex items-center text-[15px] font-medium app-muted">
@@ -381,7 +390,7 @@ export const ModelsPage = () => {
                 </tr>
               </thead>
               <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
-                {filteredModels.map((apiModel) => {
+                {paginatedModels.map((apiModel) => {
                   const modelId = apiModel.id;
                   let meta = STATIC_MODELS_MAP[modelId];
 
@@ -499,6 +508,35 @@ export const ModelsPage = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {!loading && filteredModels.length > itemsPerPage && (
+          <div className="flex items-center justify-between border-t p-4" style={{ borderColor: 'var(--app-border)' }}>
+            <div className="text-sm app-muted">
+              {language === 'th' ? `แสดง ${(currentPage - 1) * itemsPerPage + 1} ถึง ${Math.min(currentPage * itemsPerPage, filteredModels.length)} จาก ${filteredModels.length}` : `Showing ${(currentPage - 1) * itemsPerPage + 1} to ${Math.min(currentPage * itemsPerPage, filteredModels.length)} of ${filteredModels.length}`}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                style={{ borderColor: 'var(--app-border)' }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-medium app-text mx-2">
+                {currentPage} / {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                style={{ borderColor: 'var(--app-border)' }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         )}
       </div>

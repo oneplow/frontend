@@ -259,7 +259,7 @@ export const UsagePage = () => {
   const subtlePanelClass = 'app-panel-subtle rounded-[16px]';
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 space-y-6">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20 space-y-6">
       {loading && <PageLoader />}
 
       {/* Breadcrumb */}

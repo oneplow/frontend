@@ -73,7 +73,7 @@ export const IntegrationsPage = () => {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20">
       {loading && <PageLoader />}
       <div className="mb-6 flex items-center text-[15px] font-medium text-zinc-500">
         <Link to="/dashboard" className="text-blue-600 hover:text-blue-700 hover:underline transition-colors">Overview</Link>

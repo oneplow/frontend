@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Edit2, Key, ChevronRight, Users, ShieldAlert, Mail, RefreshCw, UserRoundCheck } from 'lucide-react';
+import { Trash2, Edit2, Key, ChevronRight, ChevronLeft, Users, ShieldAlert, Mail, RefreshCw, UserRoundCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { formatDate } from './KeysPage';
@@ -175,6 +175,7 @@ export const UsersPage = () => {
   const [editTokenLimit, setEditTokenLimit] = useState<string>('');
   const [editTokenResetPeriod, setEditTokenResetPeriod] = useState<string>('weekly');
   const [editLoading, setEditLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const openEditModal = (user: UserData) => {
     setEditUser(user);
@@ -265,7 +266,7 @@ export const UsersPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 space-y-6">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20 space-y-6">
       <div className="mb-2 flex items-center text-[15px] font-medium app-muted">
         <Link to="/dashboard" className="text-blue-600 hover:text-blue-700 hover:underline transition-colors">{copy.overview}</Link>
         <ChevronRight size={14} className="mx-2 opacity-50" />
@@ -314,7 +315,8 @@ export const UsersPage = () => {
         {loading ? (
           <PageLoader />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            <div className="overflow-x-auto">
             <table className="data-table text-left">
               <thead>
                 <tr>
@@ -326,7 +328,7 @@ export const UsersPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {users.slice((currentPage - 1) * 10, currentPage * 10).map((u) => (
                   <tr key={u.username}>
                     <td>
                       <div className="font-semibold text-slate-900">{u.username}</div>
@@ -383,6 +385,33 @@ export const UsersPage = () => {
               <div className="p-10 text-center text-slate-500">{copy.noUsers}</div>
             )}
           </div>
+          {users.length > 10 && (
+            <div className="flex items-center justify-between border-t border-slate-100 p-4">
+              <div className="text-sm text-slate-500">
+                {language === 'th' ? `แสดง ${(currentPage - 1) * 10 + 1} ถึง ${Math.min(currentPage * 10, users.length)} จาก ${users.length}` : `Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(currentPage * 10, users.length)} of ${users.length}`}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 transition-colors disabled:opacity-50"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm font-medium text-slate-700 mx-2">
+                  {currentPage} / {Math.ceil(users.length / 10)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(users.length / 10), p + 1))}
+                  disabled={currentPage === Math.ceil(users.length / 10)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 transition-colors disabled:opacity-50"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
 

@@ -35,7 +35,7 @@ export const SignUp = () => {
 
   return (
     <div className="page-shell auth-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
-      <div className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
+      <div className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full w-full max-w-[1800px] items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
         <Link to="/" className="inline-flex items-center gap-2 rounded-full app-button-secondary px-4 py-2 text-sm font-medium">
           <ArrowLeft size={16} />
           {copy.auth.backHome}

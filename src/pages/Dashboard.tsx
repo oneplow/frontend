@@ -566,7 +566,7 @@ export const Dashboard = () => {
   const chartGridYPositions = [50, 91.25, 132.5, 173.75, 215];
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20">
       {loading && <PageLoader />}
 
       <header className="mb-6 flex items-center justify-between gap-4">

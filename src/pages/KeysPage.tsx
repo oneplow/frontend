@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, Clock3, X, ChevronDown, Activity } from 'lucide-react';
+import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, ChevronLeft, Clock3, X, ChevronDown, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
@@ -50,6 +50,7 @@ export const KeysPage = () => {
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [createOpen, setCreateOpen] = useState(false);
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -304,7 +305,7 @@ export const KeysPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20">
       {loading && <PageLoader />}
 
       <div className="mb-6 flex items-center text-[15px] font-medium app-muted">
@@ -350,7 +351,7 @@ export const KeysPage = () => {
                 </tr>
               </thead>
               <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
-                {keys.map((k) => {
+                {keys.slice((currentPage - 1) * 10, currentPage * 10).map((k) => {
                   const expired = isExpired(k.expires_at);
                   return (
                     <tr
@@ -487,6 +488,34 @@ export const KeysPage = () => {
               </tbody>
             </table>
           </div>
+          {keys.length > 10 && (
+            <div className="flex items-center justify-between border-t p-4" style={{ borderColor: 'var(--app-border)' }}>
+              <div className="text-sm app-muted">
+                Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, keys.length)} of {keys.length}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                  style={{ borderColor: 'var(--app-border)' }}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm font-medium app-text mx-2">
+                  {currentPage} / {Math.ceil(keys.length / 10)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(keys.length / 10), p + 1))}
+                  disabled={currentPage === Math.ceil(keys.length / 10)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                  style={{ borderColor: 'var(--app-border)' }}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       <Modal isOpen={!!deleteKeyConfirm} onClose={() => setDeleteKeyConfirm(null)} title="Revoke API Key">
         <div className="mb-6 app-muted">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Search, RefreshCw, Download, ChevronRight, X, Copy
+  Search, RefreshCw, Download, ChevronRight, ChevronLeft, X, Copy
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +31,7 @@ export const LogsPage = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [modelFilter, setModelFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
   
   const [selectedLog, setSelectedLog] = useState<RequestLog | null>(null);
   const copy =
@@ -321,7 +322,7 @@ export const LogsPage = () => {
   };
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 relative min-h-screen">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20 relative min-h-screen">
       {loading && <PageLoader />}
       
       
@@ -429,7 +430,7 @@ export const LogsPage = () => {
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map(log => {
+                filteredLogs.slice((currentPage - 1) * 10, currentPage * 10).map(log => {
                   const t = formatDate(log.created_at);
                   const totalTokens = log.input_tokens + log.output_tokens;
                   const tokensStr = totalTokens >= 1000 ? `${(totalTokens/1000).toFixed(1)}k` : totalTokens;
@@ -510,21 +511,34 @@ export const LogsPage = () => {
               )}
             </tbody>
           </table>
-        </div>
-        <div className="flex items-center justify-between p-4 text-[13px] app-muted" style={{ borderTop: '1px solid var(--app-border)', backgroundColor: 'var(--app-surface-muted)' }}>
-          <div>{copy.pagination.replace('{count}', String(filteredLogs.length)).replace('{total}', String(filteredLogs.length))}</div>
-          <div className="flex items-center gap-2">
-            <button className="app-button-secondary flex h-8 w-8 items-center justify-center rounded-lg"><ChevronRight size={14} className="rotate-180" /></button>
-            <button className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-600 font-bold">1</button>
-            <button className="app-button-secondary flex h-8 w-8 items-center justify-center rounded-lg"><ChevronRight size={14} /></button>
-            
-            <Select
-              value="100"
-              onChange={() => {}}
-              className="ml-4 min-w-[110px]"
-              options={[{ value: '100', label: copy.perPage }]}
-            />
-          </div>
+          {filteredLogs.length > 10 && (
+            <div className="flex items-center justify-between border-t p-4" style={{ borderColor: 'var(--app-border)' }}>
+              <div className="text-sm app-muted">
+                {language === 'th' ? `แสดง ${(currentPage - 1) * 10 + 1} ถึง ${Math.min(currentPage * 10, filteredLogs.length)} จาก ${filteredLogs.length}` : `Showing ${(currentPage - 1) * 10 + 1} to ${Math.min(currentPage * 10, filteredLogs.length)} of ${filteredLogs.length}`}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                  style={{ borderColor: 'var(--app-border)' }}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-sm font-medium app-text mx-2">
+                  {currentPage} / {Math.ceil(filteredLogs.length / 10)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredLogs.length / 10), p + 1))}
+                  disabled={currentPage === Math.ceil(filteredLogs.length / 10)}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                  style={{ borderColor: 'var(--app-border)' }}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

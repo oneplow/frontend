@@ -145,7 +145,7 @@ export const ProfilePage = () => {
   const progressTrackStyle = { backgroundColor: 'var(--app-border)' };
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 space-y-6 w-full">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20 space-y-6 w-full">
       {loading && <PageLoader />}
       <div className="mb-2 flex items-center text-[15px] font-medium app-muted">
         <Link to="/dashboard" className="text-blue-600 hover:text-blue-500 hover:underline transition-colors">Overview</Link>

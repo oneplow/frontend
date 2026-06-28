@@ -6,7 +6,7 @@ export const LandingPage = () => {
     <div className="min-h-screen bg-[#0a0a0a] text-white selection:bg-blue-500/30 overflow-hidden font-sans">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-black/50 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+        <div className="mx-auto w-full max-w-[1800px] px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
               <Zap size={18} className="text-white" />
@@ -58,7 +58,7 @@ export const LandingPage = () => {
 
       {/* Features Grid */}
       <section className="relative py-24 px-6 border-t border-white/5 bg-black/20">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto w-full max-w-[1800px]">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight text-white mb-4">Enterprise-grade infrastructure</h2>
             <p className="text-zinc-400">Everything you need to manage AI API consumption in production.</p>
@@ -111,7 +111,7 @@ export const LandingPage = () => {
 
       {/* Footer */}
       <footer className="border-t border-white/10 py-12 px-6">
-        <div className="mx-auto max-w-7xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="mx-auto w-full max-w-[1800px] flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Zap size={16} className="text-zinc-500" />
             <span className="text-sm font-semibold text-zinc-500">EasyAI</span>

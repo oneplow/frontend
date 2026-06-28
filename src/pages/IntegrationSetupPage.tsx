@@ -88,7 +88,7 @@ export const IntegrationSetupPage = () => {
   const fetchSnippet = `const response = await fetch("${baseUrl}/chat/completions", {\n  method: "POST",\n  headers: {\n    "Authorization": "Bearer sk_nry_your_api_key",\n    "Content-Type": "application/json"\n  },\n  body: JSON.stringify({\n    model: "provider/model-id",\n    messages: [{ role: "user", content: "Say hello" }]\n  })\n});\n\nconsole.log(await response.json());`;
 
   return (
-    <div className="mx-auto max-w-7xl p-4 lg:p-6 pb-20 space-y-6">
+    <div className="mx-auto w-full max-w-[1800px] p-4 lg:p-6 pb-20 space-y-6">
       <div className="flex items-center text-[15px] font-medium text-zinc-500 mb-6">
         <Link to="/dashboard" className="text-blue-600 hover:text-blue-700 hover:underline transition-colors">Overview</Link>
         <ChevronRight size={14} className="mx-2 opacity-50 text-zinc-400" />
