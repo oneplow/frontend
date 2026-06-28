@@ -1,6 +1,5 @@
 import { memo, useCallback } from 'react';
 import { useGoogleLogin, type TokenResponse } from '@react-oauth/google';
-import { siteCopy } from '../content/siteCopy';
 import { useAppSettings } from '../context/AppSettingsContext';
 
 type GoogleButtonText = 'signin_with' | 'signup_with' | 'continue_with';
@@ -26,7 +25,6 @@ const buttonLabel = {
 
 export const GoogleAuthButton = memo(({ onSuccess, onError, text = 'signin_with' }: GoogleAuthButtonProps) => {
   const { language } = useAppSettings();
-  const copy = siteCopy[language];
   const login = useGoogleLogin({
     scope: 'openid email profile',
     onSuccess,

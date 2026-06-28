@@ -55,7 +55,7 @@ const getInitialLanguage = (): AppLanguage => {
     return savedLanguage;
   }
 
-  return navigator.language.toLowerCase().startsWith('th') ? 'th' : 'en';
+  return 'th';
 };
 
 export const AppSettingsProvider = ({ children }: { children: ReactNode }) => {

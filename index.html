@@ -20,7 +20,7 @@
       var language =
         savedLanguage === 'en' || savedLanguage === 'th'
           ? savedLanguage
-          : (navigator.language && navigator.language.toLowerCase().startsWith('th') ? 'th' : 'en');
+          : 'th';
       var background = theme === 'dark' ? '#0f1115' : '#f5f7fb';
       var text = theme === 'dark' ? '#f3f4f6' : '#0f172a';
       var root = document.documentElement;
