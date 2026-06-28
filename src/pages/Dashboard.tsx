@@ -144,6 +144,7 @@ export const Dashboard = () => {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [recentLogs, setRecentLogs] = useState<RequestLog[]>([]);
+  const [usageStats, setUsageStats] = useState<any[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const prevCounters = useRef<Record<string, number> | null>(null);
 
@@ -243,13 +244,17 @@ export const Dashboard = () => {
       try {
         const keyEndpoint = isAdmin ? '/admin/keys' : '/user/keys';
         const logsEndpoint = isAdmin ? '/admin/logs?limit=10' : '/user/logs?limit=10';
+        const usageEndpoint = isAdmin ? '/admin/usage_stats?days=90' : '/user/usage_stats?days=90';
 
-        const [keysRes, modelsRes, logsRes] = await Promise.all([
+        const [keysRes, modelsRes, logsRes, usageRes] = await Promise.all([
           fetch(`${cleanUrl}${keyEndpoint}`, {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
           fetch(`${cleanUrl}/v1/models`),
           fetch(`${cleanUrl}${logsEndpoint}`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          fetch(`${cleanUrl}${usageEndpoint}`, {
             headers: { Authorization: `Bearer ${authToken}` },
           }),
         ]);
@@ -268,6 +273,11 @@ export const Dashboard = () => {
         if (!cancelled && logsRes.ok) {
           const data = await logsRes.json();
           setRecentLogs((data.logs || []).sort((a: RequestLog, b: RequestLog) => b.created_at - a.created_at));
+        }
+
+        if (!cancelled && usageRes.ok) {
+          const data = await usageRes.json();
+          setUsageStats(data.stats || []);
         }
       } catch (error) {
         console.error('Failed to fetch dashboard support data', error);
@@ -494,35 +504,46 @@ export const Dashboard = () => {
     ? `curl -X POST ${quickStartEndpoint}/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer ${preferredApiKey?.key}" -d "{\\"model\\": \\"${quickStartModel}\\", \\"messages\\": [{\\"role\\": \\"user\\", \\"content\\": \\"Hello!\\"}], \\"stream\\": true}"`
     : '';
 
-  const chartSeries: Record<DashboardChartRange, Array<{ label: string; value: number }>> = {
-    '7D': [
-      { label: 'Jun 21, 2026', value: 0 },
-      { label: 'Jun 22, 2026', value: 0 },
-      { label: 'Jun 23, 2026', value: 0 },
-      { label: 'Jun 24, 2026', value: 0 },
-      { label: 'Jun 25, 2026', value: 0 },
-      { label: 'Jun 26, 2026', value: 0 },
-      { label: 'Jun 27, 2026', value: 1 },
-    ],
-    '30D': [
-      { label: 'May 29', value: 0 },
-      { label: 'Jun 03', value: 1 },
-      { label: 'Jun 08', value: 0 },
-      { label: 'Jun 13', value: 2 },
-      { label: 'Jun 18', value: 1 },
-      { label: 'Jun 23', value: 4 },
-      { label: 'Jun 28', value: 1 },
-    ],
-    '90D': [
-      { label: 'Apr 01', value: 1 },
-      { label: 'Apr 15', value: 3 },
-      { label: 'May 01', value: 2 },
-      { label: 'May 15', value: 5 },
-      { label: 'Jun 01', value: 2 },
-      { label: 'Jun 15', value: 6 },
-      { label: 'Jun 28', value: 1 },
-    ],
-  };
+  const chartSeries = useMemo(() => {
+    const generateSeries = (days: number) => {
+      const series: Array<{ label: string; value: number }> = [];
+      const now = new Date();
+      
+      const dailyMap = usageStats.reduce((acc: Record<string, number>, stat: any) => {
+        acc[stat.date] = (acc[stat.date] || 0) + (stat.requests || 0);
+        return acc;
+      }, {});
+
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0]; 
+        
+        const month = d.toLocaleString('en-US', { month: 'short' });
+        const day = d.getDate().toString().padStart(2, '0');
+        const label = days === 7 ? `${month} ${day}, ${d.getFullYear()}` : `${month} ${day}`;
+        
+        series.push({ label, value: dailyMap[dateStr] || 0 });
+      }
+      
+      if (days > 7) {
+        const sampled: Array<{ label: string; value: number }> = [];
+        const step = (days - 1) / 6;
+        for (let i = 0; i < 7; i++) {
+          const index = Math.round(i * step);
+          sampled.push(series[index]);
+        }
+        return sampled;
+      }
+      return series;
+    };
+
+    return {
+      '7D': generateSeries(7),
+      '30D': generateSeries(30),
+      '90D': generateSeries(90)
+    };
+  }, [usageStats]);
 
   const activeChartSeries = chartSeries[chartRange];
   const chartMax = Math.max(...activeChartSeries.map((point) => point.value), 1);
