@@ -235,13 +235,34 @@ export const LogsPage = () => {
     setLoading(true);
     try {
       const endpoint = isAdmin ? '/admin/logs' : '/user/logs';
-      // For simplicity, we just fetch a batch of 100 recent logs
       const res = await fetch(`${cleanUrl}${endpoint}?limit=100`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setLogs(data.logs || []);
+        const rawLogs = data.logs || [];
+        
+        // Aggregate consecutive logs with the same model
+        const aggregated: RequestLog[] = [];
+        rawLogs.forEach((log: RequestLog) => {
+          if (aggregated.length === 0) {
+            aggregated.push({ ...log });
+            return;
+          }
+          const last = aggregated[aggregated.length - 1];
+          // If same model, same user, within 60 seconds
+          if (last.model === log.model && last.username === log.username && Math.abs(last.created_at - log.created_at) < 60) {
+            last.input_tokens += log.input_tokens;
+            last.output_tokens += log.output_tokens;
+            last.latency_ms += log.latency_ms;
+            // Optionally, we could keep track of how many requests were grouped
+            // last.is_success = last.is_success && log.is_success;
+          } else {
+            aggregated.push({ ...log });
+          }
+        });
+        
+        setLogs(aggregated);
       }
     } catch (e) {
       console.error("Failed to fetch logs", e);
@@ -293,23 +314,28 @@ export const LogsPage = () => {
   }, [logs]);
 
   const getModelIcon = (model: string) => {
-    if (model.toLowerCase().includes('mimo')) return "/xiaomi.svg";
-    if (model.toLowerCase().includes('mistral')) return "/minimax.svg";
-    if (model.toLowerCase().includes('deepseek')) return "/deepseek.svg";
+    const m = model.toLowerCase();
+    if (m.includes('claude')) return "/anthropic.svg";
+    if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('dall-e')) return "/openai.svg";
+    if (m.includes('gemini')) return "/google.svg";
+    if (m.includes('llama') || m.includes('meta')) return "/meta.svg";
+    if (m.includes('mimo')) return "/xiaomi.svg";
+    if (m.includes('mistral') || m.includes('mixtral')) return "/minimax.svg"; // Fallback to minimax icon if no mistral icon exists
+    if (m.includes('deepseek')) return "/deepseek.svg";
     return "/icons.svg";
   };
 
   const getProvider = (model: string) => {
-    if (model.toLowerCase().includes('mimo')) return "Xiaomi MiMo";
-    if (model.toLowerCase().includes('mistral')) return "Mistral AI";
-    if (model.toLowerCase().includes('deepseek')) return "DeepSeek";
+    const m = model.toLowerCase();
+    if (m.includes('claude')) return "Anthropic";
+    if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('dall-e')) return "OpenAI";
+    if (m.includes('gemini')) return "Google";
+    if (m.includes('llama') || m.includes('meta')) return "Meta";
+    if (m.includes('mimo')) return "Xiaomi MiMo";
+    if (m.includes('mistral') || m.includes('mixtral')) return "Mistral AI";
+    if (m.includes('deepseek')) return "DeepSeek";
+    if (m.includes('cohere') || m.includes('command')) return "Cohere";
     return copy.providerUnknown;
-  };
-
-  const formatCost = (tokens: number) => {
-    // Dummy cost calculation
-    const cost = (tokens / 1000) * 0.001; // $0.001 per 1k tokens
-    return `~Rp${(cost * 15500).toFixed(2)}`; // Converting dummy USD to Rp
   };
 
   const formatDate = (ts: number) => {
@@ -416,7 +442,6 @@ export const LogsPage = () => {
                 <th className="px-6 py-4">{copy.table.model}</th>
                 <th className="px-6 py-4">{copy.table.status}</th>
                 <th className="px-6 py-4 text-right">{copy.table.tokens}</th>
-                <th className="px-6 py-4 text-right">{copy.table.cost}</th>
                 <th className="px-6 py-4 text-right">{copy.table.latency}</th>
                 <th className="px-6 py-4 text-right">{copy.table.retries}</th>
                 <th className="px-6 py-4">{copy.table.time}</th>
@@ -425,7 +450,7 @@ export const LogsPage = () => {
             <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center app-muted">
+                  <td colSpan={isAdmin ? 8 : 7} className="py-12 text-center app-muted">
                     {copy.empty}
                   </td>
                 </tr>
@@ -486,9 +511,6 @@ export const LogsPage = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="font-bold app-text">{tokensStr} {copy.total}</div>
                         <div className="text-[11px] app-muted">{inStr} {copy.input} • {log.output_tokens} {copy.output}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="font-bold app-muted">{formatCost(totalTokens)}</div>
                       </td>
                       <td className="px-6 py-4 text-right font-bold app-text">
                         {(log.latency_ms / 1000).toFixed(1)}s
@@ -634,11 +656,7 @@ export const LogsPage = () => {
                 <div className="text-[15px] app-text">0</div>
               </div>
               
-              <div>
-                <label className="mb-1 block text-[13px] font-bold app-muted">{copy.fields.cost}</label>
-                <div className="text-[15px] app-text">{formatCost(selectedLog.input_tokens + selectedLog.output_tokens)} {copy.estimatedPayg}</div>
-              </div>
-              
+
               <div>
                 <label className="mb-1 block text-[13px] font-bold app-muted">{copy.fields.createdAt}</label>
                 <div className="text-[15px] app-text">{formatDate(selectedLog.created_at).date}, {formatDate(selectedLog.created_at).time}</div>
