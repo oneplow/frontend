@@ -20,6 +20,7 @@ interface RequestLog {
   output_tokens: number;
   latency_ms: number;
   created_at: number;
+  request_count?: number;
 }
 
 export const LogsPage = () => {
@@ -52,7 +53,6 @@ export const LogsPage = () => {
               model: 'โมเดล',
               status: 'สถานะ',
               tokens: 'โทเคน',
-              cost: 'ค่าใช้จ่าย',
               latency: 'เวลา',
               retries: 'ลองซ้ำ',
               time: 'เวลา',
@@ -73,7 +73,6 @@ export const LogsPage = () => {
               totalTokens: 'โทเคนรวม',
               latency: 'เวลา',
               retries: 'จำนวนครั้งที่ลองซ้ำ',
-              cost: 'ค่าใช้จ่าย',
               createdAt: 'สร้างเมื่อ',
             },
             providerUnknown: 'ผู้ให้บริการไม่ทราบชื่อ',
@@ -81,7 +80,6 @@ export const LogsPage = () => {
             input: 'เข้า',
             output: 'ออก',
             seconds: 'วินาที',
-            estimatedPayg: '(ประมาณการ PAYG)',
             unknownUser: 'ไม่ทราบผู้ใช้',
           }
         : {
@@ -99,7 +97,6 @@ export const LogsPage = () => {
               model: 'โมเดล',
               status: 'สถานะ',
               tokens: 'โทเคน',
-              cost: 'ค่าใช้จ่าย',
               latency: 'เวลา',
               retries: 'ลองซ้ำ',
               time: 'เวลา',
@@ -120,7 +117,6 @@ export const LogsPage = () => {
               totalTokens: 'โทเคนรวม',
               latency: 'เวลา',
               retries: 'จำนวนครั้งที่ลองซ้ำ',
-              cost: 'ค่าใช้จ่าย',
               createdAt: 'สร้างเมื่อ',
             },
             providerUnknown: 'ผู้ให้บริการไม่ทราบชื่อ',
@@ -128,7 +124,6 @@ export const LogsPage = () => {
             input: 'เข้า',
             output: 'ออก',
             seconds: 'วินาที',
-            estimatedPayg: '(ประมาณการ PAYG)',
             unknownUser: 'ไม่ทราบผู้ใช้',
           }
       : isAdmin
@@ -147,7 +142,6 @@ export const LogsPage = () => {
               model: 'Model',
               status: 'Status',
               tokens: 'Tokens',
-              cost: 'Cost',
               latency: 'Latency',
               retries: 'Retries',
               time: 'Time',
@@ -168,7 +162,6 @@ export const LogsPage = () => {
               totalTokens: 'Total tokens',
               latency: 'Latency',
               retries: 'Retries',
-              cost: 'Cost',
               createdAt: 'Created at',
             },
             providerUnknown: 'Unknown Provider',
@@ -176,7 +169,6 @@ export const LogsPage = () => {
             input: 'in',
             output: 'out',
             seconds: 'seconds',
-            estimatedPayg: '(est. PAYG)',
             unknownUser: 'Unknown user',
           }
         : {
@@ -194,7 +186,6 @@ export const LogsPage = () => {
               model: 'Model',
               status: 'Status',
               tokens: 'Tokens',
-              cost: 'Cost',
               latency: 'Latency',
               retries: 'Retries',
               time: 'Time',
@@ -215,7 +206,6 @@ export const LogsPage = () => {
               totalTokens: 'Total tokens',
               latency: 'Latency',
               retries: 'Retries',
-              cost: 'Cost',
               createdAt: 'Created at',
             },
             providerUnknown: 'Unknown Provider',
@@ -223,12 +213,42 @@ export const LogsPage = () => {
             input: 'in',
             output: 'out',
             seconds: 'seconds',
-            estimatedPayg: '(est. PAYG)',
             unknownUser: 'Unknown user',
           };
 
   const token = userToken;
   const cleanUrl = apiUrl.replace(/\/$/, '');
+
+  const aggregatePromptLogs = (rawLogs: RequestLog[]) => {
+    const aggregated: RequestLog[] = [];
+
+    rawLogs.forEach((log) => {
+      if (aggregated.length === 0) {
+        aggregated.push({ ...log, request_count: log.request_count ?? 1 });
+        return;
+      }
+
+      const last = aggregated[aggregated.length - 1];
+      const samePromptWindow = Math.abs(last.created_at - log.created_at) <= 90;
+      const sameRequestShape =
+        last.model === log.model &&
+        (last.username || '') === (log.username || '') &&
+        last.method === log.method &&
+        last.url === log.url;
+
+      if (sameRequestShape && samePromptWindow) {
+        last.input_tokens += log.input_tokens || 0;
+        last.output_tokens += log.output_tokens || 0;
+        last.latency_ms += log.latency_ms || 0;
+        last.is_success = last.is_success && log.is_success;
+        last.request_count = (last.request_count || 1) + (log.request_count || 1);
+      } else {
+        aggregated.push({ ...log, request_count: log.request_count ?? 1 });
+      }
+    });
+
+    return aggregated;
+  };
 
   const fetchLogs = async () => {
     if (!token) return;
@@ -241,28 +261,7 @@ export const LogsPage = () => {
       if (res.ok) {
         const data = await res.json();
         const rawLogs = data.logs || [];
-        
-        // Aggregate consecutive logs with the same model
-        const aggregated: RequestLog[] = [];
-        rawLogs.forEach((log: RequestLog) => {
-          if (aggregated.length === 0) {
-            aggregated.push({ ...log });
-            return;
-          }
-          const last = aggregated[aggregated.length - 1];
-          // If same model, same user, within 60 seconds
-          if (last.model === log.model && last.username === log.username && Math.abs(last.created_at - log.created_at) < 60) {
-            last.input_tokens += log.input_tokens;
-            last.output_tokens += log.output_tokens;
-            last.latency_ms += log.latency_ms;
-            // Optionally, we could keep track of how many requests were grouped
-            // last.is_success = last.is_success && log.is_success;
-          } else {
-            aggregated.push({ ...log });
-          }
-        });
-        
-        setLogs(aggregated);
+        setLogs(aggregatePromptLogs(rawLogs));
       }
     } catch (e) {
       console.error("Failed to fetch logs", e);
@@ -315,7 +314,8 @@ export const LogsPage = () => {
 
   const getModelIcon = (model: string) => {
     const m = model.toLowerCase();
-    if (m.includes('claude')) return "/anthropic.svg";
+    const normalized = m.replace(/[^a-z0-9]/g, '');
+    if (m.includes('claude') || normalized.includes('opus') || normalized.includes('sonnet') || normalized.includes('haiku')) return "/anthropic.svg";
     if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('dall-e')) return "/openai.svg";
     if (m.includes('gemini')) return "/google.svg";
     if (m.includes('llama') || m.includes('meta')) return "/meta.svg";
@@ -327,7 +327,8 @@ export const LogsPage = () => {
 
   const getProvider = (model: string) => {
     const m = model.toLowerCase();
-    if (m.includes('claude')) return "Anthropic";
+    const normalized = m.replace(/[^a-z0-9]/g, '');
+    if (m.includes('claude') || normalized.includes('opus') || normalized.includes('sonnet') || normalized.includes('haiku')) return "Anthropic";
     if (m.includes('gpt') || m.includes('o1') || m.includes('o3') || m.includes('dall-e')) return "OpenAI";
     if (m.includes('gemini')) return "Google";
     if (m.includes('llama') || m.includes('meta')) return "Meta";

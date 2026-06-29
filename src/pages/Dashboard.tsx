@@ -52,11 +52,14 @@ interface RequestLog {
   id: string;
   username?: string;
   model: string;
+  method?: string;
+  url?: string;
   is_success: boolean;
   input_tokens: number;
   output_tokens: number;
   latency_ms: number;
   created_at: number;
+  request_count?: number;
 }
 
 interface DashboardStreamPayload extends HealthData {
@@ -134,6 +137,37 @@ const formatRelativeTime = (timestamp: number, language: 'en' | 'th') => {
 
   const diffDays = Math.floor(diffHours / 24);
   return language === 'th' ? `${diffDays} วันที่แล้ว` : `${diffDays} days ago`;
+};
+
+const aggregatePromptLogs = (rawLogs: RequestLog[]) => {
+  const aggregated: RequestLog[] = [];
+
+  rawLogs.forEach((log) => {
+    if (aggregated.length === 0) {
+      aggregated.push({ ...log, request_count: log.request_count ?? 1 });
+      return;
+    }
+
+    const last = aggregated[aggregated.length - 1];
+    const samePromptWindow = Math.abs(last.created_at - log.created_at) <= 90;
+    const sameRequestShape =
+      last.model === log.model &&
+      (last.username || '') === (log.username || '') &&
+      (last.method || '') === (log.method || '') &&
+      (last.url || '') === (log.url || '');
+
+    if (sameRequestShape && samePromptWindow) {
+      last.input_tokens += log.input_tokens || 0;
+      last.output_tokens += log.output_tokens || 0;
+      last.latency_ms += log.latency_ms || 0;
+      last.is_success = last.is_success && log.is_success;
+      last.request_count = (last.request_count || 1) + (log.request_count || 1);
+    } else {
+      aggregated.push({ ...log, request_count: log.request_count ?? 1 });
+    }
+  });
+
+  return aggregated;
 };
 
 export const Dashboard = () => {
@@ -269,7 +303,7 @@ export const Dashboard = () => {
     const fetchDashboardSupportData = async () => {
       try {
         const keyEndpoint = isAdmin ? '/admin/keys' : '/user/keys';
-        const logsEndpoint = isAdmin ? '/admin/logs?limit=10' : '/user/logs?limit=10';
+        const logsEndpoint = isAdmin ? '/admin/logs?limit=50' : '/user/logs?limit=50';
         const usageEndpoint = isAdmin ? '/admin/usage_stats?days=90' : '/user/usage_stats?days=90';
 
         const [keysRes, modelsRes, logsRes, usageRes] = await Promise.all([
@@ -298,7 +332,8 @@ export const Dashboard = () => {
 
         if (!cancelled && logsRes.ok) {
           const data = await logsRes.json();
-          setRecentLogs((data.logs || []).sort((a: RequestLog, b: RequestLog) => b.created_at - a.created_at));
+          const logs = aggregatePromptLogs(data.logs || []);
+          setRecentLogs(logs.sort((a: RequestLog, b: RequestLog) => b.created_at - a.created_at));
         }
 
         if (!cancelled && usageRes.ok) {

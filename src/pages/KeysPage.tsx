@@ -450,8 +450,8 @@ export const KeysPage = () => {
                             <div className="text-xs font-medium app-text">
                               {(k.tokens_used || 0).toLocaleString()} / {k.token_limit.toLocaleString()}
                             </div>
-                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                              <div className="h-full rounded-full bg-emerald-400" style={{ width: `${Math.min(100, ((k.tokens_used || 0) / k.token_limit) * 100)}%` }}></div>
+                            <div className="token-meter">
+                              <div className="token-meter-fill" style={{ width: `${Math.min(100, ((k.tokens_used || 0) / k.token_limit) * 100)}%` }}></div>
                             </div>
                           </div>
                         ) : (

@@ -16,6 +16,27 @@ interface UsageStat {
   total_latency_ms: number;
 }
 
+const formatLocalDateKey = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getLogoSrcForModel = (model: string) => {
+  const lower = model.toLowerCase();
+  const normalized = lower.replace(/[^a-z0-9]/g, '');
+  if (lower.includes('mimo')) return '/xiaomi.svg';
+  if (lower.includes('mistral') || lower.includes('mixtral')) return '/minimax.svg';
+  if (lower.includes('deepseek')) return '/deepseek.svg';
+  if (lower.includes('kimi') || lower.includes('qwen')) return '/qwen.svg';
+  if (lower.includes('claude') || normalized.includes('opus') || normalized.includes('sonnet') || normalized.includes('haiku')) return '/anthropic.svg';
+  if (lower.includes('gemini')) return '/gemini.svg';
+  if (lower.includes('glm')) return '/zhipu-ai.svg';
+  if (lower.includes('gpt') || lower.includes('o1') || lower.includes('o3') || lower.includes('dall-e')) return '/openai.svg';
+  return '/icons.svg';
+};
+
 export const UsagePage = () => {
   const { apiUrl, isAdmin, userToken } = useAuth();
   const { language } = useAppSettings();
@@ -241,18 +262,50 @@ export const UsagePage = () => {
     for (let i = timeRange - 1; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDateKey(d);
       dateMap.set(dateStr, { requests: 0, tokens: 0 });
     }
     stats.forEach(s => {
-      if (dateMap.has(s.date)) {
-        const entry = dateMap.get(s.date)!;
-        entry.requests += s.requests;
-        entry.tokens += s.tokens;
+      if (!dateMap.has(s.date)) {
+        dateMap.set(s.date, { requests: 0, tokens: 0 });
       }
+      const entry = dateMap.get(s.date)!;
+      entry.requests += s.requests;
+      entry.tokens += s.tokens;
     });
-    return Array.from(dateMap.entries()).map(([date, data]) => ({ date, ...data }));
+    return Array.from(dateMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, data]) => ({ date, ...data }));
   }, [stats, timeRange]);
+
+  const chartValues = useMemo(
+    () => chartData.map((d) => chartTab === 'Requests' ? d.requests : d.tokens),
+    [chartData, chartTab]
+  );
+  const hasChartData = chartValues.some((value) => value > 0);
+  const chartMax = Math.max(...chartValues, 1);
+  const chartPoints = useMemo(() => {
+    const width = 760;
+    const height = 220;
+    const left = 28;
+    const top = 18;
+    const count = Math.max(chartData.length - 1, 1);
+
+    return chartData.map((d, i) => {
+      const value = chartTab === 'Requests' ? d.requests : d.tokens;
+      const x = left + (i / count) * width;
+      const y = top + height - (value / chartMax) * height;
+      const labelDate = new Date(`${d.date}T00:00:00`);
+      const label = timeRange > 30
+        ? labelDate.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { month: 'short', day: 'numeric' })
+        : labelDate.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric' });
+      return { ...d, value, x, y, label };
+    });
+  }, [chartData, chartMax, chartTab, language, timeRange]);
+  const chartLinePath = chartPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const chartAreaPath = chartPoints.length
+    ? `${chartLinePath} L ${chartPoints[chartPoints.length - 1].x} 238 L ${chartPoints[0].x} 238 Z`
+    : '';
 
   const panelClass = 'app-panel rounded-[20px] p-6';
   const statCardClass = 'app-panel rounded-[16px] p-5';
@@ -342,7 +395,7 @@ export const UsagePage = () => {
       </div>
 
       {/* Middle Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
         <div className={`${panelClass} lg:col-span-2 flex flex-col`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-4">
             <div>
@@ -368,43 +421,48 @@ export const UsagePage = () => {
               </div>
             </div>
           </div>
-          <div className="mt-4 flex-1 rounded-[16px] min-h-[300px] flex items-end justify-between items-stretch gap-1">
-            {chartData.length === 0 ? (
+          <div className="mt-4 rounded-[16px] min-h-[260px]">
+            {!hasChartData ? (
                <div className={`${subtlePanelClass} flex flex-1 items-center justify-center border border-dashed`}>
                  <span className="text-[14px] font-medium app-muted">{copy.noUsage}</span>
                </div>
             ) : (
-               <div className="flex-1 flex items-end justify-between h-[250px] relative px-4 pb-6 mt-10">
-                 {(() => {
-                    const maxVal = Math.max(...chartData.map(d => chartTab === 'Requests' ? d.requests : d.tokens), 1);
-                    return chartData.map((d, i) => {
-                      const val = chartTab === 'Requests' ? d.requests : d.tokens;
-                      const hPct = (val / maxVal) * 100;
-                      return (
-                        <div key={i} className="flex flex-col items-center flex-1 group">
-                          <div className="w-full flex-1 flex flex-col justify-end px-0.5">
-                            <div
-                              className="relative w-full rounded-t-sm transition-all group-hover:bg-blue-400"
-                              style={{ height: `${Math.max(2, hPct)}%`, backgroundColor: 'var(--app-accent-soft)' }}
-                            >
-                              <div
-                                className="app-panel absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded px-2 py-1 text-[10px] opacity-0 transition-opacity pointer-events-none group-hover:opacity-100"
-                              >
-                                {val.toLocaleString()} {copy.tabs[chartTab]}
-                                <div className="mt-0.5 text-[9px] app-muted">{d.date}</div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    });
-                 })()}
+               <div className="h-[260px] rounded-[16px] border p-3" style={{ borderColor: 'var(--app-border)', backgroundColor: 'var(--app-surface-muted)' }}>
+                 <svg viewBox="0 0 820 270" className="h-full w-full overflow-visible" preserveAspectRatio="none">
+                   {[0, 1, 2, 3].map((line) => {
+                     const y = 18 + (line * 220) / 3;
+                     return (
+                       <line
+                         key={line}
+                         x1="28"
+                         y1={y}
+                         x2="788"
+                         y2={y}
+                         stroke="var(--app-border)"
+                         strokeWidth="1"
+                       />
+                     );
+                   })}
+                   <path d={chartAreaPath} fill="var(--app-accent-soft)" />
+                   <path d={chartLinePath} fill="none" stroke="var(--app-accent)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+                   {chartPoints.map((point) => (
+                     <g key={point.date}>
+                       <circle cx={point.x} cy={point.y} r="4" fill="var(--app-accent)" vectorEffect="non-scaling-stroke" />
+                       <title>{`${point.date}: ${point.value.toLocaleString()} ${copy.tabs[chartTab]}`}</title>
+                     </g>
+                   ))}
+                   {chartPoints.filter((_, index) => chartPoints.length <= 14 || index % Math.ceil(chartPoints.length / 8) === 0 || index === chartPoints.length - 1).map((point) => (
+                     <text key={`label-${point.date}`} x={point.x} y="262" fill="var(--app-text-muted)" fontSize="11" fontWeight="600" textAnchor="middle">
+                       {point.label}
+                     </text>
+                   ))}
+                 </svg>
                </div>
             )}
           </div>
         </div>
 
-        <div className={panelClass}>
+        <div className={`${panelClass} h-fit`}>
           <h2 className="mb-1 text-[22px] font-bold app-text">{copy.summaryTitle}</h2>
           <p className="mb-8 text-[13px] app-muted">{copy.summaryDescription}</p>
           
@@ -443,10 +501,7 @@ export const UsagePage = () => {
              {modelStats.map(m => {
                 const maxTokens = Math.max(...modelStats.map(x => x.tokens), 1);
                 const wPct = (m.tokens / maxTokens) * 100;
-                let iconSrc = "/icons.svg";
-                if (m.model.toLowerCase().includes('mimo')) iconSrc = "/xiaomi.svg";
-                else if (m.model.toLowerCase().includes('mistral')) iconSrc = "/minimax.svg";
-                else if (m.model.toLowerCase().includes('deepseek')) iconSrc = "/deepseek.svg";
+                const iconSrc = getLogoSrcForModel(m.model);
                 
                 return (
                   <div key={m.model} className={`${subtlePanelClass} flex items-center gap-4 border p-4 py-2`}>
