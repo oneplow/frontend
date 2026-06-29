@@ -56,6 +56,7 @@ export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
       title: copy.sidebar.sections.developer,
       items: [
         { path: '/keys', label: copy.sidebar.items.apiKeys, icon: Key },
+        { path: '/users', label: copy.sidebar.items.manageUsers, icon: Users, adminOnly: true },
         { path: '/models', label: copy.sidebar.items.models, icon: Cpu },
         { path: '/integrations', label: copy.sidebar.items.integrations, icon: Sparkles },
         { path: '/status', label: copy.sidebar.items.status, icon: Activity }
@@ -69,13 +70,12 @@ export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
     //     { path: '/help', label: 'Help', icon: HelpCircle }
     //   ]
     // },
-    {
-      title: copy.sidebar.sections.support,
-      items: [
-        { path: '/community', label: copy.sidebar.items.community, icon: Users },
-        { path: '/users', label: copy.sidebar.items.manageUsers, icon: Users, adminOnly: true }
-      ]
-    }
+    // {
+    //   title: copy.sidebar.sections.support,
+    //   items: [
+    //     { path: '/community', label: copy.sidebar.items.community, icon: Users }
+    //   ]
+    // }
   ];
 
   const filteredGroups = NAV_GROUPS.map(group => ({

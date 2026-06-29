@@ -198,9 +198,9 @@ export const IntegrationSetupPage = () => {
                   className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
                 >
                   {copiedStates['code'] ? (
-                    <><Check size={14} className="text-emerald-500" /> Copied</>
+                    <Check size={14} className="text-emerald-500" />
                   ) : (
-                    <><Copy size={14} /> Copy</>
+                    <Copy size={14} />
                   )}
                 </button>
               </div>
@@ -229,9 +229,9 @@ export const IntegrationSetupPage = () => {
                   className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300 transition-colors"
                 >
                   {copiedStates['fetch'] ? (
-                    <><Check size={14} className="text-emerald-500" /> Copied</>
+                    <Check size={14} className="text-emerald-500" />
                   ) : (
-                    <><Copy size={14} /> Copy</>
+                    <Copy size={14} />
                   )}
                 </button>
               </div>

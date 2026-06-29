@@ -9,7 +9,8 @@ import {
   ChevronDown,
   Users,
   TerminalSquare,
-  Search
+  Search,
+  Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -63,6 +64,7 @@ interface DashboardStreamPayload extends HealthData {
     mode: 'admin' | 'user';
     key_count: number | null;
     user_count: number | null;
+    total_system_tokens?: number;
     token_info: TokenInfo | null;
   } | null;
 }
@@ -344,6 +346,7 @@ export const Dashboard = () => {
   const readyAccounts = health?.warm_accounts ?? health?.fresh_accounts ?? null;
   const adminUserCount = dashboardMeta?.user_count;
   const adminKeyCount = dashboardMeta?.key_count ?? apiKeys.length;
+  const adminTotalTokens = dashboardMeta?.total_system_tokens ?? 0;
   const errorLabel = language === 'th' ? 'ผิดพลาด' : 'Error';
   
   const tokenLimitStr = tokenInfo?.token_limit === null ? 'Unlimited' : (tokenInfo?.token_limit ? `${(tokenInfo.token_limit / 1000000).toFixed(0)}M` : '0');
@@ -433,6 +436,7 @@ export const Dashboard = () => {
           users: 'ผู้ใช้ทั้งหมด',
           apiKeys: 'API Keys ทั้งหมด',
           totalRequests: 'คำขอทั้งหมด',
+          totalTokens: 'โทเคนทั้งหมด',
           systemSuccessRate: 'อัตราสำเร็จระบบ',
           adminControls: 'เครื่องมือผู้ดูแล',
           adminControlsDesc: 'จัดการการเข้าถึงและติดตามสถานะระบบจากจุดเดียว',
@@ -459,6 +463,7 @@ export const Dashboard = () => {
           users: 'Total Users',
           apiKeys: 'API Keys',
           totalRequests: 'Total Requests',
+          totalTokens: 'Tokens Used',
           systemSuccessRate: 'System Success Rate',
           adminControls: 'Admin Controls',
           adminControlsDesc: 'Manage access and monitor system health from one place.',
@@ -617,7 +622,7 @@ export const Dashboard = () => {
       </header>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${isAdmin ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-5 mb-8`}>
         {isAdmin ? (
           <>
             <div className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] relative overflow-hidden flex flex-col justify-between">
@@ -658,6 +663,18 @@ export const Dashboard = () => {
 
             <div className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] relative flex flex-col justify-between">
               <div className="flex items-center gap-2 mb-4">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-50 text-amber-500">
+                  <Database size={14} strokeWidth={2} />
+                </div>
+                <span className="text-[13px] font-bold text-slate-500">{adminCopy.totalTokens}</span>
+              </div>
+              <div className="text-3xl font-bold text-slate-900 leading-none tracking-tight">
+                {adminTotalTokens.toLocaleString()}
+              </div>
+            </div>
+
+            <div className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.05)] relative flex flex-col justify-between">
+              <div className="flex items-center gap-2 mb-4">
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-50 text-emerald-500">
                   <CheckCircle2 size={14} strokeWidth={2} />
                 </div>
@@ -685,7 +702,7 @@ export const Dashboard = () => {
               <div>
                 <div className="flex items-baseline gap-1.5 mb-4">
                   <span className="text-3xl font-bold text-slate-900 leading-none tracking-tight">
-                    {tokenInfo?.token_limit === null ? copy.unlimited : ((tokenInfo?.token_limit || 0) - (tokenInfo?.tokens_used || 0)).toLocaleString()}
+                    {tokenInfo?.token_limit === null ? copy.unlimited : Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format((tokenInfo?.token_limit || 0) - (tokenInfo?.tokens_used || 0))}
                   </span>
                   <span className="text-[11px] font-medium text-slate-400">{copy.ofTokens} {tokenLimitStr} tokens</span>
                 </div>

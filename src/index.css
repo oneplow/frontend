@@ -129,6 +129,22 @@
   background-color: rgba(249, 115, 22, 0.14) !important;
 }
 
+[data-theme='dark'] .bg-purple-50 {
+  background-color: rgba(168, 85, 247, 0.14) !important;
+}
+
+[data-theme='dark'] .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+}
+
+[data-theme='dark'] .text-emerald-700 {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+[data-theme='dark'] .text-red-700 {
+  color: #f87171 !important; /* red-400 */
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -315,6 +331,10 @@ select:focus-visible {
 
 .app-tab-button:hover {
   color: var(--app-text);
+}
+
+.app-tab-button:focus {
+  outline: none;
 }
 
 .app-tab-button[data-active='true'] {

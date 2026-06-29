@@ -71,11 +71,11 @@ export const StatusPage = () => {
           const data = await res.json();
           if (!cancelled) {
             const realModels: StatusModel[] = (data.data || []).map((m: any) => {
-              const blocks = generateMockBlocks(m.id);
-              const downCount = blocks.filter(b => b === 0).length;
+              const blocks = m.blocks || generateMockBlocks(m.id);
+              const downCount = blocks.filter((b: number) => b === 0).length;
               let status: 'Operational' | 'Down' | 'Degraded' = 'Operational';
               if (downCount > 5) status = 'Down';
-              else if (downCount > 0 || blocks.filter(b => b === 2).length > 5) status = 'Degraded';
+              else if (downCount > 0 || blocks.filter((b: number) => b === 2).length > 5) status = 'Degraded';
               
               const brand = getBrandFromId(m.id);
               return {

@@ -1,4 +1,4 @@
-import { Copy, Image as ImageIcon, Loader2, Search, ChevronRight, ChevronLeft, Type } from 'lucide-react';
+import { Copy, Image as ImageIcon, Loader2, Search, ChevronRight, ChevronLeft, Type, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -201,6 +201,77 @@ const getBrandIcon = (brand: string) => {
   }
 };
 
+const getInferredModelMeta = (modelId: string) => {
+  const lower = modelId.toLowerCase();
+  let inferredBrand = 'generic';
+  let inferredTier = 'Advanced';
+  let inferredAccess = 'Stable';
+  let inferredMultiplier = '1x';
+  let inferredFree = false;
+  let inferredVision = lower.includes('vision') || lower.includes('gpt-4o') || lower.includes('gpt-5') || lower.includes('claude') || lower.includes('gemini') || lower.includes('qwen') || lower.includes('kimi');
+  let inferredText = true;
+
+  if (lower.includes('gpt-5') || lower.includes('opus') || lower.includes('gemini-3-1') || lower.includes('grok-4')) {
+    inferredTier = 'Pro';
+    inferredMultiplier = '3x';
+  } else if (lower.includes('gpt-4o') || lower.includes('sonnet') || lower.includes('gemini-3') || lower.includes('deepseek-v4-pro') || lower.includes('qwen-3-max') || lower.includes('llama-3-3')) {
+    inferredTier = 'Advanced';
+    inferredMultiplier = '1.5x';
+  } else if (lower.includes('mini') || lower.includes('flash') || lower.includes('deepseek-r1')) {
+    inferredTier = 'Standard';
+    inferredMultiplier = '0.5x';
+  }
+
+  if (lower.includes('deepseek')) inferredBrand = 'deepseek';
+  else if (lower.includes('gemini')) inferredBrand = 'google';
+  else if (lower.includes('claude')) inferredBrand = 'anthropic';
+  else if (lower.includes('kimi') || lower.includes('moonshot')) inferredBrand = 'kimi';
+  else if (lower.includes('gpt')) inferredBrand = 'openai';
+  else if (lower.includes('mistral') || lower.includes('mixtral')) inferredBrand = 'mistral';
+  else if (lower.includes('mimo')) inferredBrand = 'mimo';
+  else if (lower.includes('glm')) inferredBrand = 'zhipu';
+  else if (lower.includes('qwen')) inferredBrand = 'kimi';
+  else if (lower.includes('llama')) inferredBrand = 'meta';
+
+  let inferredContext = '8K'; // default
+  if (lower.includes('gemini')) inferredContext = '1M';
+  else if (lower.includes('claude')) inferredContext = '200K';
+  else if (lower.includes('kimi') || lower.includes('moonshot')) inferredContext = '200K';
+  else if (lower.includes('gpt-4o') || lower.includes('gpt-4-turbo') || lower.includes('gpt-4.5') || lower.includes('gpt-5')) inferredContext = '128K';
+  else if (lower.includes('gpt-4-32k')) inferredContext = '32K';
+  else if (lower.includes('gpt-4')) inferredContext = '8K';
+  else if (lower.includes('gpt-3.5')) inferredContext = '16K';
+  else if (lower.includes('deepseek-v4') || lower.includes('deepseek-v5')) inferredContext = '1M';
+  else if (lower.includes('deepseek-r1') || lower.includes('deepseek-v3')) inferredContext = '128K';
+  else if (lower.includes('deepseek')) inferredContext = '64K';
+  else if (lower.includes('mistral-large')) inferredContext = '128K';
+  else if (lower.includes('mistral') || lower.includes('mixtral')) inferredContext = '32K';
+  else if (lower.includes('glm-4')) inferredContext = '128K';
+  else if (lower.includes('qwen')) inferredContext = '32K';
+  else if (lower.includes('mimo')) inferredContext = '1M';
+  else if (lower.includes('llama-3-3')) inferredContext = '128K';
+  else if (lower.includes('grok')) inferredContext = '128K';
+
+  return {
+    id: modelId,
+    tier: inferredTier,
+    access: inferredAccess,
+    vision: inferredVision,
+    text: inferredText,
+    free: inferredFree,
+    notEligible: false,
+    multiplier: inferredMultiplier,
+    inputRp: '-',
+    inputUsd: '-',
+    cacheRp: '-',
+    cacheUsd: '-',
+    outputRp: '-',
+    outputUsd: '-',
+    context: inferredContext,
+    brand: inferredBrand
+  };
+};
+
 export const ModelsPage = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [models, setModels] = useState<ApiModel[]>([]);
@@ -296,7 +367,7 @@ export const ModelsPage = () => {
 
   const filteredModels = models.filter(m => {
     const matchesSearch = m.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const meta = STATIC_MODELS_MAP[m.id] || { tier: 'Advanced', access: 'Beta' };
+    const meta = STATIC_MODELS_MAP[m.id] || getInferredModelMeta(m.id);
     const matchesTier = tierFilter === 'all' || meta.tier === tierFilter;
     const matchesAccess = accessFilter === 'all' || meta.access === accessFilter;
     return matchesSearch && matchesTier && matchesAccess;
@@ -392,40 +463,7 @@ export const ModelsPage = () => {
               <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
                 {paginatedModels.map((apiModel) => {
                   const modelId = apiModel.id;
-                  let meta = STATIC_MODELS_MAP[modelId];
-
-                  if (!meta) {
-                    const lower = modelId.toLowerCase();
-                    let inferredBrand = 'generic';
-                    if (lower.includes('deepseek')) inferredBrand = 'deepseek';
-                    else if (lower.includes('gemini')) inferredBrand = 'google';
-                    else if (lower.includes('claude')) inferredBrand = 'anthropic';
-                    else if (lower.includes('kimi')) inferredBrand = 'kimi';
-                    else if (lower.includes('gpt')) inferredBrand = 'openai';
-                    else if (lower.includes('mistral') || lower.includes('mixtral')) inferredBrand = 'mistral';
-                    else if (lower.includes('mimo')) inferredBrand = 'mimo';
-                    else if (lower.includes('glm')) inferredBrand = 'zhipu';
-                    else if (lower.includes('qwen')) inferredBrand = 'kimi'; // Using Kimi logo for Qwen as requested
-
-                    meta = {
-                      id: modelId,
-                      tier: 'Advanced',
-                      access: 'Beta',
-                      vision: lower.includes('vision'),
-                      text: !lower.includes('vision'),
-                      free: false,
-                      notEligible: false,
-                      multiplier: '',
-                      inputRp: '-',
-                      inputUsd: '-',
-                      cacheRp: '-',
-                      cacheUsd: '-',
-                      outputRp: '-',
-                      outputUsd: '-',
-                      context: 'Unknown',
-                      brand: inferredBrand
-                    };
-                  }
+                  let meta = STATIC_MODELS_MAP[modelId] || getInferredModelMeta(modelId);
 
                   return (
                     <tr
@@ -448,15 +486,7 @@ export const ModelsPage = () => {
                             className="relative opacity-0 transition-colors group-hover:opacity-100 app-muted hover:text-[var(--app-text)]"
                             title={copy.copyModelId}
                           >
-                            <Copy size={14} />
-                            {copiedId === modelId && (
-                              <span
-                                className="absolute -top-8 left-1/2 z-10 -translate-x-1/2 rounded px-2 py-1 text-[10px] font-medium text-white shadow-sm"
-                                style={{ backgroundColor: 'var(--app-text)' }}
-                              >
-                                {copy.copied}
-                              </span>
-                            )}
+                            {copiedId === modelId ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                           </button>
                           
                           <div className="flex items-center gap-1.5 ml-1">

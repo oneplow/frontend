@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, ChevronLeft, Clock3, X, ChevronDown, Activity } from 'lucide-react';
+import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, ChevronLeft, Clock3, X, ChevronDown, Activity, Key, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
@@ -332,28 +332,43 @@ export const KeysPage = () => {
         </div>
       </div>
 
-        <div className={panelClass}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead>
-                <tr
-                  className="text-xs font-semibold tracking-wider uppercase app-muted"
-                  style={{
-                    borderBottom: '1px solid var(--app-border)',
-                    backgroundColor: 'var(--app-surface-muted)',
-                  }}
-                >
-                  <th className="px-6 py-4">Name / Owner</th>
-                  <th className="px-6 py-4">API Key</th>
-                  <th className="px-6 py-4">Models</th>
-                  <th className="px-6 py-4">Limit (RPM)</th>
-                  <th className="px-6 py-4">Tokens</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
+      <div className={panelClass}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm whitespace-nowrap">
+            <thead>
+              <tr
+                className="text-xs font-semibold tracking-wider uppercase app-muted"
+                style={{
+                  borderBottom: '1px solid var(--app-border)',
+                  backgroundColor: 'var(--app-surface-muted)',
+                }}
+              >
+                <th className="px-6 py-4">Name / Owner</th>
+                <th className="px-6 py-4">API Key</th>
+                <th className="px-6 py-4">Models</th>
+                <th className="px-6 py-4">Limit (RPM)</th>
+                <th className="px-6 py-4">Tokens</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
+              {keys.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-24 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--app-surface-muted)' }}>
+                        <Search size={28} strokeWidth={1.5} className="app-muted" />
+                      </div>
+                      <h3 className="text-base font-semibold app-text">No results found</h3>
+                      <p className="text-sm app-muted max-w-sm">
+                        {isAdmin ? "There are currently no API keys in the system." : "You haven't created any API keys yet. Click 'Create key' to get started."}
+                      </p>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
-                {keys.slice((currentPage - 1) * 10, currentPage * 10).map((k) => {
+              ) : (
+                keys.slice((currentPage - 1) * 10, currentPage * 10).map((k) => {
                   const expired = isExpired(k.expires_at);
                   return (
                     <tr
@@ -387,9 +402,8 @@ export const KeysPage = () => {
                             color: 'var(--app-text)',
                           }}
                         >
-                          <Copy size={14} />
+                          {copiedKey === k.key ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
                           <code className="text-xs">{maskApiKey(k.key)}</code>
-                          {copiedKey === k.key && <span className="text-xs text-emerald-600 font-medium">Copied</span>}
                         </button>
                       </td>
                       <td className="px-6 py-4 text-sm app-muted">
@@ -484,39 +498,39 @@ export const KeysPage = () => {
                       </td>
                     </tr>
                   )
-                })}
-              </tbody>
-            </table>
-          </div>
-          {keys.length > 10 && (
-            <div className="flex items-center justify-between border-t p-4" style={{ borderColor: 'var(--app-border)' }}>
-              <div className="text-sm app-muted">
-                Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, keys.length)} of {keys.length}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
-                  style={{ borderColor: 'var(--app-border)' }}
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <span className="text-sm font-medium app-text mx-2">
-                  {currentPage} / {Math.ceil(keys.length / 10)}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(Math.ceil(keys.length / 10), p + 1))}
-                  disabled={currentPage === Math.ceil(keys.length / 10)}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
-                  style={{ borderColor: 'var(--app-border)' }}
-                >
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
+                }))}
+            </tbody>
+          </table>
         </div>
+        {keys.length > 10 && (
+          <div className="flex items-center justify-between border-t p-4" style={{ borderColor: 'var(--app-border)' }}>
+            <div className="text-sm app-muted">
+              Showing {(currentPage - 1) * 10 + 1} to {Math.min(currentPage * 10, keys.length)} of {keys.length}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                style={{ borderColor: 'var(--app-border)' }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-medium app-text mx-2">
+                {currentPage} / {Math.ceil(keys.length / 10)}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(keys.length / 10), p + 1))}
+                disabled={currentPage === Math.ceil(keys.length / 10)}
+                className="flex h-8 w-8 items-center justify-center rounded-lg border transition-colors disabled:opacity-50"
+                style={{ borderColor: 'var(--app-border)' }}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
       <Modal isOpen={!!deleteKeyConfirm} onClose={() => setDeleteKeyConfirm(null)} title="Revoke API Key">
         <div className="mb-6 app-muted">
           Are you sure you want to revoke this key? Any applications using it will immediately lose access.
@@ -630,93 +644,94 @@ export const KeysPage = () => {
                   onChange={(e) => setFormExpiresDays(e.target.value)}
                 />
               </div>
-              <div className="md:col-span-2 relative">
-                <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
-                  Allowed Models
-                </label>
-                <div
-                  className="input-field min-h-[42px] cursor-pointer flex flex-wrap items-center gap-1.5 relative pr-8"
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                  {(!formAllowedModels || formAllowedModels.trim() === '') ? (
-                    <span className="app-muted">All models allowed</span>
-                  ) : (
-                    formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
-                      <span
-                        key={m}
-                        className="px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1"
-                        style={{ backgroundColor: 'var(--app-surface-muted)', color: 'var(--app-text)' }}
-                      >
-                        {m}
-                        <X size={12} className="cursor-pointer" onClick={(e) => {
-                          e.stopPropagation();
-                          const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
-                          setFormAllowedModels(updated.join(','));
-                        }} />
-                      </span>
-                    ))
-                  )}
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 app-muted pointer-events-none" />
-                </div>
-
-                {isDropdownOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
-                    <div className="app-select-menu absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-lg z-50 overflow-hidden">
-                      <div className="p-2 shrink-0 relative" style={{ borderBottom: '1px solid var(--app-border)' }}>
-                        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 app-muted" />
-                        <input
-                          type="text"
-                          className="w-full rounded-md pl-9 pr-3 py-1.5 text-sm"
-                          style={{
-                            backgroundColor: 'var(--app-surface-muted)',
-                            color: 'var(--app-text)',
-                          }}
-                          placeholder="Search models..."
-                          value={modelSearchQuery}
-                          onChange={(e) => setModelSearchQuery(e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </div>
-                      <div className="overflow-y-auto p-1">
-                        {availableModels.length === 0 ? (
-                          <div className="p-3 text-sm app-muted text-center">Loading models...</div>
-                        ) : (
-                          availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
-                            <div className="p-3 text-sm app-muted text-center">No models found</div>
-                          ) : (
-                            availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
-                              const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
-                              return (
-                                <label key={model} className="app-select-option rounded-md cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={isSelected}
-                                    onChange={() => {
-                                      let selected = formAllowedModels.split(',').map(m => m.trim()).filter(Boolean);
-                                      if (isSelected) {
-                                        selected = selected.filter(m => m !== model);
-                                      } else {
-                                        selected.push(model);
-                                      }
-                                      setFormAllowedModels(selected.join(','));
-                                    }}
-                                    className="rounded text-blue-600 focus:ring-0"
-                                  />
-                                  <span className="text-sm font-medium app-text">{model}</span>
-                                </label>
-                              );
-                            })
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-                <p className="mt-2 text-xs app-muted">Select allowed models for this key. Leave blank to allow all.</p>
-              </div>
             </div>
           )}
+
+          <div className="relative">
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider app-muted">
+              Allowed Models
+            </label>
+            <div
+              className="input-field min-h-[42px] cursor-pointer flex flex-wrap items-center gap-1.5 relative pr-8"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {(!formAllowedModels || formAllowedModels.trim() === '') ? (
+                <span className="app-muted">All models allowed</span>
+              ) : (
+                formAllowedModels.split(',').map(m => m.trim()).filter(Boolean).map(m => (
+                  <span
+                    key={m}
+                    className="px-2 py-0.5 rounded-md text-[11px] font-medium flex items-center gap-1"
+                    style={{ backgroundColor: 'var(--app-surface-muted)', color: 'var(--app-text)' }}
+                  >
+                    {m}
+                    <X size={12} className="cursor-pointer" onClick={(e) => {
+                      e.stopPropagation();
+                      const updated = formAllowedModels.split(',').map(x => x.trim()).filter(x => x && x !== m);
+                      setFormAllowedModels(updated.join(','));
+                    }} />
+                  </span>
+                ))
+              )}
+              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 app-muted pointer-events-none" />
+            </div>
+
+            {isDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+                <div className="app-select-menu absolute top-[70px] left-0 right-0 mt-1 max-h-64 flex flex-col rounded-lg z-50 overflow-hidden shadow-lg border" style={{ borderColor: 'var(--app-border)' }}>
+                  <div className="p-2 shrink-0 relative" style={{ borderBottom: '1px solid var(--app-border)' }}>
+                    <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 app-muted" />
+                    <input
+                      type="text"
+                      className="w-full rounded-md pl-9 pr-3 py-1.5 text-sm outline-none"
+                      style={{
+                        backgroundColor: 'var(--app-surface-muted)',
+                        color: 'var(--app-text)',
+                      }}
+                      placeholder="Search models..."
+                      value={modelSearchQuery}
+                      onChange={(e) => setModelSearchQuery(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <div className="overflow-y-auto p-1">
+                    {availableModels.length === 0 ? (
+                      <div className="p-3 text-sm app-muted text-center">Loading models...</div>
+                    ) : (
+                      availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).length === 0 ? (
+                        <div className="p-3 text-sm app-muted text-center">No models found</div>
+                      ) : (
+                        availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
+                          const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
+                          return (
+                            <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {
+                                  let selected = formAllowedModels.split(',').map(m => m.trim()).filter(Boolean);
+                                  if (isSelected) {
+                                    selected = selected.filter(m => m !== model);
+                                  } else {
+                                    selected.push(model);
+                                  }
+                                  setFormAllowedModels(selected.join(','));
+                                }}
+                                className="rounded text-blue-600 focus:ring-0 shrink-0"
+                              />
+                              <span className="text-sm font-medium app-text text-left flex-1">{model}</span>
+                            </label>
+                          );
+                        })
+                      )
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+            <p className="mt-2 text-xs app-muted">Select allowed models for this key. Leave blank to allow all.</p>
+          </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <button onClick={() => setCreateOpen(false)} className="btn-secondary px-4 py-2 text-sm">
@@ -845,7 +860,7 @@ export const KeysPage = () => {
                           availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
                             const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
                             return (
-                              <label key={model} className="app-select-option rounded-md cursor-pointer">
+                              <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
@@ -858,9 +873,9 @@ export const KeysPage = () => {
                                     }
                                     setFormAllowedModels(selected.join(','));
                                   }}
-                                  className="rounded text-blue-600 focus:ring-0"
+                                  className="rounded text-blue-600 focus:ring-0 shrink-0"
                                 />
-                                <span className="text-sm font-medium app-text">{model}</span>
+                                <span className="text-sm font-medium app-text text-left flex-1">{model}</span>
                               </label>
                             );
                           })

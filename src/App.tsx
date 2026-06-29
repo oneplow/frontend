@@ -16,6 +16,7 @@ import { IntegrationsPage } from './pages/IntegrationsPage';
 import { IntegrationSetupPage } from './pages/IntegrationSetupPage';
 import { StatusPage } from './pages/StatusPage';
 import { UsagePage } from './pages/UsagePage';
+import { CommunityPage } from './pages/CommunityPage';
 
 function AppRoutes() {
   return (
@@ -31,15 +32,16 @@ function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/usage" element={<UsagePage />} />
         <Route path="/keys" element={<KeysPage />} />
-                <Route path="/logs" element={<LogsPage />} />
+        <Route path="/logs" element={<LogsPage />} />
         <Route path="/models" element={<ModelsPage />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
         <Route path="/integrations/:id" element={<IntegrationSetupPage />} />
         <Route path="/status" element={<StatusPage />} />
         <Route path="/users" element={<UsersPage />} />
+        <Route path="/community" element={<CommunityPage />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
-      
+
       {/* Catch-all redirect */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
