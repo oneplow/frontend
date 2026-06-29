@@ -23,7 +23,7 @@ interface RequestLog {
 }
 
 export const LogsPage = () => {
-  const { isAdmin, apiUrl, adminKey, userToken } = useAuth();
+  const { isAdmin, apiUrl, userToken } = useAuth();
   const { language } = useAppSettings();
   const [logs, setLogs] = useState<RequestLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,7 +227,7 @@ export const LogsPage = () => {
             unknownUser: 'Unknown user',
           };
 
-  const token = isAdmin ? adminKey : userToken;
+  const token = userToken;
   const cleanUrl = apiUrl.replace(/\/$/, '');
 
   const fetchLogs = async () => {

@@ -46,7 +46,7 @@ const getRemainingDays = (expiresAt: number | null) => {
 // ----------------------------
 
 export const KeysPage = () => {
-  const { apiUrl, userToken, adminKey, isAdmin } = useAuth();
+  const { apiUrl, userToken, isAdmin } = useAuth();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
@@ -89,7 +89,7 @@ export const KeysPage = () => {
     setLoading(true);
     try {
       const endpoint = isAdmin ? '/admin/keys' : '/user/keys';
-      const token = isAdmin ? adminKey : userToken;
+      const token = userToken;
       const res = await fetch(`${apiUrl}${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -105,7 +105,7 @@ export const KeysPage = () => {
 
   useEffect(() => {
     fetchKeys();
-  }, [apiUrl, isAdmin, adminKey, userToken]);
+  }, [apiUrl, isAdmin, userToken]);
 
   const [deleteKeyConfirm, setDeleteKeyConfirm] = useState<string | null>(null);
   const panelClass = 'app-panel overflow-hidden rounded-xl';
@@ -175,7 +175,7 @@ export const KeysPage = () => {
     try {
       const cleanUrl = apiUrl.replace(/\/$/, '');
       const endpoint = isAdmin ? '/admin/keys' : '/user/keys';
-      const token = isAdmin ? adminKey : userToken;
+      const token = userToken;
 
       const rpmValue = formRpmLimit.trim() === '' ? undefined : Number(formRpmLimit);
       const expiresValue = formExpiresDays.trim() === '' ? undefined : Number(formExpiresDays);
@@ -237,7 +237,7 @@ export const KeysPage = () => {
     try {
       const cleanUrl = apiUrl.replace(/\/$/, '');
       const endpoint = isAdmin ? `/admin/keys/${deleteKeyConfirm}` : `/user/keys`;
-      const token = isAdmin ? adminKey : userToken;
+      const token = userToken;
       const res = await fetch(`${cleanUrl}${endpoint}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
@@ -278,7 +278,7 @@ export const KeysPage = () => {
       const res = await fetch(`${cleanUrl}/admin/keys/${editTargetKey.key}`, {
         method: 'PUT',
         headers: {
-          Authorization: `Bearer ${adminKey}`,
+          Authorization: `Bearer ${userToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)

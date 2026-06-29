@@ -135,7 +135,7 @@ const formatRelativeTime = (timestamp: number, language: 'en' | 'th') => {
 };
 
 export const Dashboard = () => {
-  const { isAdmin, username, apiUrl, adminKey, userToken } = useAuth();
+  const { isAdmin, username, apiUrl, userToken } = useAuth();
   const { language } = useAppSettings();
   const [loading, setLoading] = useState(true);
   const [health, setHealth] = useState<HealthData | null>(null);
@@ -155,7 +155,7 @@ export const Dashboard = () => {
   const prevCounters = useRef<Record<string, number> | null>(null);
 
   const cleanUrl = apiUrl.replace(/\/$/, '');
-  const authToken = isAdmin ? adminKey : userToken;
+  const authToken = userToken;
 
   // Close model dropdown when clicking outside
   useEffect(() => {

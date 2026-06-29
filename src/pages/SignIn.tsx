@@ -66,7 +66,7 @@ export const SignIn = () => {
       }
       const data = await res.json();
 
-      loginUser(apiUrl, data.token, data.username);
+      loginUser(apiUrl, data.token, data.username, data.role || 'user');
       navigate('/dashboard');
     } catch (err: any) {
       setError(resolveGoogleErrorMessage(err.message || '', copy.auth.loginFailed));

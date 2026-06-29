@@ -5,12 +5,12 @@ import { Header } from './Header';
 import { useAuth } from '../context/AuthContext';
 
 export const Layout = () => {
-  const { isUser, isAdmin } = useAuth();
+  const { isUser } = useAuth();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // If not logged in at all, redirect to sign-in
-  if (!isUser && !isAdmin) {
+  if (!isUser) {
     return <Navigate to="/sign-in" state={{ from: location }} replace />;
   }
 

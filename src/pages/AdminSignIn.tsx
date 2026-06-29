@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Shield, AlertCircle } from 'lucide-react';
+import { ArrowRight, Shield, AlertCircle, Info } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
@@ -9,34 +9,38 @@ export const AdminSignIn = () => {
   const [adminKey, setAdminKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { loginAdmin } = useAuth();
+  const { loginAdminFallback } = useAuth();
   const { language } = useAppSettings();
   const navigate = useNavigate();
   const copy =
     language === 'th'
       ? {
-          title: 'พอร์ทัลผู้ดูแลระบบ',
-          description: 'ยืนยันตัวตนด้วย admin key เพื่อเข้าถึงหน้าจัดการระบบ',
+          title: 'พอร์ทัลผู้ดูแลระบบ (Fallback)',
+          description: 'ใช้ ADMIN_KEY เพื่อเข้าสู่ระบบแบบเดิม (สำหรับย้อนกลับ)',
+          notice: 'ถ้า email ของคุณถูกตั้งเป็น admin ในระบบแล้ว ให้เข้าสู่ระบบผ่าน Google Sign-In ปกติที่หน้าเข้าสู่ระบบ',
           invalidKey: 'Admin Key ไม่ถูกต้อง',
           loginFailed: 'เข้าสู่ระบบไม่สำเร็จ',
           apiUrl: 'API URL',
-          adminKey: 'Admin Key',
-          adminKeyPlaceholder: 'กรอก master key',
+          adminKey: 'Admin Key (Fallback)',
+          adminKeyPlaceholder: 'กรอก ADMIN_KEY',
           authenticating: 'กำลังยืนยันตัวตน...',
           accessPanel: 'เข้าสู่แผงผู้ดูแลระบบ',
-          returnToUser: 'กลับไปหน้าเข้าสู่ระบบผู้ใช้',
+          returnToUser: 'กลับไปหน้าเข้าสู่ระบบปกติ',
+          goToSignIn: 'เข้าสู่ระบบด้วย Google',
         }
       : {
-          title: 'Admin portal',
-          description: 'Authenticate with an admin key to access system management.',
+          title: 'Admin Portal (Fallback)',
+          description: 'Use ADMIN_KEY for legacy admin access.',
+          notice: 'If your email is configured as an admin, just sign in with Google on the normal sign-in page.',
           invalidKey: 'Invalid Admin Key',
           loginFailed: 'Login failed',
           apiUrl: 'API URL',
-          adminKey: 'Admin Key',
-          adminKeyPlaceholder: 'Enter master key',
+          adminKey: 'Admin Key (Fallback)',
+          adminKeyPlaceholder: 'Enter ADMIN_KEY',
           authenticating: 'Authenticating...',
           accessPanel: 'Access Admin Panel',
           returnToUser: 'Return to User Login',
+          goToSignIn: 'Sign in with Google',
         };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -51,7 +55,7 @@ export const AdminSignIn = () => {
       });
       if (!res.ok) throw new Error(copy.invalidKey);
 
-      loginAdmin(cleanUrl, adminKey);
+      loginAdminFallback(cleanUrl, adminKey);
       navigate('/dashboard/keys');
     } catch (err: any) {
       setError(err.message || copy.loginFailed);
@@ -64,7 +68,12 @@ export const AdminSignIn = () => {
     <div className="page-shell auth-shell flex min-h-screen items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md">
         <div className="surface-card rounded-[36px] p-6 sm:p-8">
-          <div className="mb-8">
+          <div className="mb-6 rounded-xl bg-blue-50 border border-blue-100 p-3.5 flex items-start gap-3">
+            <Info size={16} className="text-blue-600 mt-0.5 shrink-0" />
+            <p className="text-[13px] leading-relaxed text-blue-700">{copy.notice}</p>
+          </div>
+
+          <div className="mb-6">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
               <Shield size={26} />
             </div>
@@ -111,9 +120,9 @@ export const AdminSignIn = () => {
             </button>
           </form>
 
-          <div className="mt-6 border-t border-blue-100 pt-5 text-center">
-            <Link to="/sign-in" className="text-sm font-medium text-slate-500 transition-colors hover:text-blue-600">
-              {copy.returnToUser}
+          <div className="mt-6 border-t border-blue-100 pt-5 flex flex-col items-center gap-3">
+            <Link to="/sign-in" className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+              {copy.goToSignIn}
             </Link>
           </div>
         </div>

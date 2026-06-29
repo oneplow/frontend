@@ -17,7 +17,7 @@ interface UsageStat {
 }
 
 export const UsagePage = () => {
-  const { apiUrl, isAdmin, adminKey, userToken } = useAuth();
+  const { apiUrl, isAdmin, userToken } = useAuth();
   const { language } = useAppSettings();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState(7); // days
@@ -180,7 +180,7 @@ export const UsagePage = () => {
             tok: 'tok',
           };
 
-  const token = isAdmin ? adminKey : userToken;
+  const token = userToken;
   const cleanUrl = apiUrl.replace(/\/$/, '');
 
   useEffect(() => {

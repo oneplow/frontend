@@ -21,7 +21,7 @@ interface UserData {
 }
 
 export const UsersPage = () => {
-  const { apiUrl, adminKey, isAdmin } = useAuth();
+  const { apiUrl, userToken, isAdmin } = useAuth();
   const { language } = useAppSettings();
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +151,7 @@ export const UsersPage = () => {
     setLoading(true);
     try {
       const res = await fetch(`${apiUrl}/admin/users`, {
-        headers: { Authorization: `Bearer ${adminKey}` }
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       if (!res.ok) throw new Error('Failed to fetch users');
       const data = await res.json();
@@ -165,7 +165,7 @@ export const UsersPage = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [apiUrl, isAdmin, adminKey]);
+  }, [apiUrl, isAdmin, userToken]);
 
   const [deleteUserConfirm, setDeleteUserConfirm] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<UserData | null>(null);
@@ -191,7 +191,7 @@ export const UsersPage = () => {
     try {
       const res = await fetch(`${apiUrl}/admin/users/${editUser.username}/tokens/reset`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${adminKey}` }
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       if (res.ok) {
         alert('Tokens reset successfully');
@@ -213,7 +213,7 @@ export const UsersPage = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${adminKey}`
+          Authorization: `Bearer ${userToken}`
         },
         body: JSON.stringify({
           rpm_limit: editRpmLimit ? parseInt(editRpmLimit) : null,
@@ -245,7 +245,7 @@ export const UsersPage = () => {
     try {
       const res = await fetch(`${apiUrl}/admin/users/${deleteUserConfirm}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${adminKey}` }
+        headers: { Authorization: `Bearer ${userToken}` }
       });
       if (res.ok) fetchUsers();
     } catch (err) {

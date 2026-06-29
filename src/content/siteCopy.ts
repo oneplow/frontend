@@ -319,7 +319,7 @@ export const siteCopy: Record<AppLanguage, SiteCopy> = {
         overview: 'ภาพรวม',
         usage: 'การใช้งาน',
         logs: 'บันทึกคำขอ',
-        apiKeys: 'API keys',
+        apiKeys: 'คีย์ API',
         models: 'โมเดล',
         integrations: 'การเชื่อมต่อ',
         status: 'สถานะระบบ',
