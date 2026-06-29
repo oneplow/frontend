@@ -8,7 +8,8 @@ import {
   Check,
   ChevronDown,
   Users,
-  TerminalSquare
+  TerminalSquare,
+  Search
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -146,10 +147,33 @@ export const Dashboard = () => {
   const [recentLogs, setRecentLogs] = useState<RequestLog[]>([]);
   const [usageStats, setUsageStats] = useState<any[]>([]);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
+  const [selectedQuickStartModel, setSelectedQuickStartModel] = useState<string>('');
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const modelSearchRef = useRef<HTMLInputElement>(null);
   const prevCounters = useRef<Record<string, number> | null>(null);
 
   const cleanUrl = apiUrl.replace(/\/$/, '');
   const authToken = isAdmin ? adminKey : userToken;
+
+  // Close model dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
+        setModelDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (modelDropdownOpen && modelSearchRef.current) {
+      modelSearchRef.current.focus();
+    }
+  }, [modelDropdownOpen]);
 
   useEffect(() => {
     let active = true;
@@ -464,7 +488,7 @@ export const Dashboard = () => {
     return firstActiveKey || sortedKeys[0];
   }, [apiKeys]);
 
-  const quickStartModel = useMemo(() => {
+  const defaultModel = useMemo(() => {
     const allowedModels = preferredApiKey?.allowed_models
       ?.split(',')
       .map((model) => model.trim())
@@ -476,6 +500,20 @@ export const Dashboard = () => {
 
     return availableModels[0] || '';
   }, [availableModels, preferredApiKey]);
+
+  const quickStartModel = selectedQuickStartModel || defaultModel;
+
+  // Filter models for dropdown
+  const filteredModels = useMemo(() => {
+    const allowedModels = preferredApiKey?.allowed_models
+      ?.split(',')
+      .map((model) => model.trim())
+      .filter(Boolean) || [];
+    const modelList = allowedModels.length > 0
+      ? allowedModels.filter((m) => !modelSearchQuery || m.toLowerCase().includes(modelSearchQuery.toLowerCase()))
+      : availableModels.filter((m) => !modelSearchQuery || m.toLowerCase().includes(modelSearchQuery.toLowerCase()));
+    return modelList;
+  }, [availableModels, preferredApiKey, modelSearchQuery]);
 
   const modelUsageRows = useMemo(() => {
     const grouped = recentLogs.reduce<Record<string, { model: string; requests: number; tokens: number }>>((acc, log) => {
@@ -743,11 +781,12 @@ export const Dashboard = () => {
                   key={range}
                   type="button"
                   onClick={() => setChartRange(range)}
-                  className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-colors ${
+                  className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all ${
                     chartRange === range
                       ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
                       : 'text-slate-500 hover:text-slate-700 cursor-pointer'
                   }`}
+                  style={{ outline: 'none' }}
                 >
                   {range}
                 </button>
@@ -756,7 +795,7 @@ export const Dashboard = () => {
           </div>
           <div className="mt-2 flex-1 rounded-[16px] min-h-[250px] relative">
             <div className="absolute inset-0">
-               <svg viewBox="0 0 800 250" className="w-full h-full preserveAspectRatio-none" preserveAspectRatio="none">
+               <svg viewBox="0 0 800 250" className="w-full h-full" preserveAspectRatio="none">
                   {/* Grid Lines */}
                   <line x1="0" y1="50" x2="800" y2="50" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4,4" />
                   <line x1="0" y1="100" x2="800" y2="100" stroke="#f1f5f9" strokeWidth="1" strokeDasharray="4,4" />
@@ -934,13 +973,62 @@ export const Dashboard = () => {
                 
                 <div>
                   <label className="mb-1 block text-[11px] font-bold text-slate-500">{copy.model}</label>
-                  <div className="flex items-center justify-between rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <span className="text-[13px] font-medium text-slate-700">{quickStartModel || copy.noModel}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1" ref={modelDropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => { setModelDropdownOpen(!modelDropdownOpen); setModelSearchQuery(''); }}
+                        className="flex items-center justify-between w-full rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-left hover:border-slate-300 transition-colors"
+                      >
+                        <span className="text-[13px] font-medium text-slate-700 truncate">{quickStartModel || copy.noModel}</span>
+                        <ChevronDown size={14} className={`text-slate-400 shrink-0 ml-2 transition-transform ${modelDropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {modelDropdownOpen && (
+                        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-[12px] border border-slate-200 bg-white shadow-lg overflow-hidden">
+                          <div className="p-2 border-b border-slate-100">
+                            <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5">
+                              <Search size={13} className="text-slate-400 shrink-0" />
+                              <input
+                                ref={modelSearchRef}
+                                type="text"
+                                value={modelSearchQuery}
+                                onChange={(e) => setModelSearchQuery(e.target.value)}
+                                placeholder={language === 'th' ? 'ค้นหาโมเดล...' : 'Search models...'}
+                                className="w-full bg-transparent text-[12px] text-slate-700 placeholder:text-slate-400 outline-none"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
+                          </div>
+                          <div className="max-h-[200px] overflow-y-auto py-1">
+                            {filteredModels.length === 0 ? (
+                              <div className="px-3 py-4 text-center text-[12px] text-slate-400">
+                                {language === 'th' ? 'ไม่พบโมเดล' : 'No models found'}
+                              </div>
+                            ) : (
+                              filteredModels.map((model) => (
+                                <button
+                                  key={model}
+                                  type="button"
+                                  onClick={() => { setSelectedQuickStartModel(model); setModelDropdownOpen(false); setModelSearchQuery(''); }}
+                                  className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] transition-colors hover:bg-blue-50 ${
+                                    model === quickStartModel ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                                  }`}
+                                >
+                                  <ProviderLogoBadge src={getLogoSrcForModel(model) || undefined} alt={model} size="sm" />
+                                  <span className="truncate">{model}</span>
+                                  {model === quickStartModel && <Check size={13} className="ml-auto text-blue-600 shrink-0" />}
+                                </button>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => quickStartModel && handleCopy(quickStartModel, 'model')}
                       disabled={!quickStartModel}
-                      className="text-slate-400 hover:text-slate-600 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex items-center justify-center w-9 h-[42px] rounded-[10px] border border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors disabled:cursor-not-allowed disabled:opacity-40 shrink-0"
                       title={copy.model}
                     >
                       {copiedField === 'model' ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
