@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, ChevronLeft, Clock3, X, ChevronDown, Activity, Key, Check } from 'lucide-react';
+import { Copy, Plus, Search, AlertCircle, RefreshCw, Trash2, Edit2, ChevronRight, ChevronLeft, Clock3, X, ChevronDown, Activity, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Modal } from '../components/Modal';
