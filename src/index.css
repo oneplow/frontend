@@ -32,8 +32,8 @@
 
 [data-theme='dark'] {
   --app-bg: #0f1115;
-  --app-surface: rgba(24, 27, 35, 0.92);
-  --app-surface-elevated: rgba(29, 32, 40, 0.94);
+  --app-surface: #181b23;
+  --app-surface-elevated: #1d2028;
   --app-surface-muted: #161a22;
   --app-border: rgba(255, 255, 255, 0.08);
   --app-divider: rgba(255, 255, 255, 0.06);

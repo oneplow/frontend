@@ -705,7 +705,7 @@ export const KeysPage = () => {
                         availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
                           const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
                           return (
-                            <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full">
+                            <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-[var(--app-surface-muted)] transition-colors w-full">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
@@ -860,7 +860,7 @@ export const KeysPage = () => {
                           availableModels.filter(m => m.toLowerCase().includes(modelSearchQuery.toLowerCase())).map(model => {
                             const isSelected = formAllowedModels.split(',').map(m => m.trim()).includes(model);
                             return (
-                              <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors w-full">
+                              <label key={model} className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer hover:bg-[var(--app-surface-muted)] transition-colors w-full">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
