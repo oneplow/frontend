@@ -323,10 +323,12 @@ export const KeysPage = () => {
             <RefreshCw size={16} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
-          <button onClick={openCreateModal} className="app-button-primary inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium">
-            <Plus size={16} />
-            {isAdmin ? 'Create key' : hasExistingUserKey ? 'Update key' : 'Create key'}
-          </button>
+          {(!hasExistingUserKey || isAdmin) && (
+            <button onClick={openCreateModal} className="app-button-primary inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium">
+              <Plus size={16} />
+              Create key
+            </button>
+          )}
         </div>
       </div>
 
@@ -457,16 +459,14 @@ export const KeysPage = () => {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          {isAdmin && (
-                            <button
-                              className="app-button-secondary inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium shadow-sm"
-                              onClick={() => openEditModal(k)}
-                              title="Edit Key"
-                            >
-                              <Edit2 size={14} />
-                              Edit
-                            </button>
-                          )}
+                          <button
+                            className="app-button-secondary inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium shadow-sm"
+                            onClick={() => openEditModal(k)}
+                            title="Edit Key"
+                          >
+                            <Edit2 size={14} />
+                            Edit
+                          </button>
                           <button
                             className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors shadow-sm"
                             onClick={() => setDeleteKeyConfirm(k.key)}

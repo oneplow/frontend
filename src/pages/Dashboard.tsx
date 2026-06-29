@@ -775,18 +775,14 @@ export const Dashboard = () => {
               <h2 className="text-[17px] font-bold text-slate-900">{copy.usageTrend}</h2>
               <p className="mt-1 text-[13px] text-slate-500">{copy.tokenUsageOverTime}</p>
             </div>
-            <div className="flex rounded-[10px] bg-slate-50 p-1 border border-slate-100">
+            <div className="app-tab-group">
               {(['7D', '30D', '90D'] as DashboardChartRange[]).map((range) => (
                 <button
                   key={range}
                   type="button"
                   onClick={() => setChartRange(range)}
-                  className={`px-3 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                    chartRange === range
-                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200/60'
-                      : 'text-slate-500 hover:text-slate-700 cursor-pointer'
-                  }`}
-                  style={{ outline: 'none' }}
+                  className="app-tab-button"
+                  data-active={chartRange === range}
                 >
                   {range}
                 </button>
