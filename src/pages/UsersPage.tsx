@@ -360,7 +360,7 @@ export const UsersPage = () => {
                     <td className="text-right">
                       <div className="flex justify-end gap-2">
                         <button
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                          className="app-button-secondary inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium shadow-sm"
                           onClick={() => openEditModal(u)}
                           title={copy.edit}
                         >
@@ -368,9 +368,14 @@ export const UsersPage = () => {
                           {copy.edit}
                         </button>
                         <button
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-100"
+                          className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors shadow-sm"
                           onClick={() => setDeleteUserConfirm(u.username)}
                           title={copy.delete}
+                          style={{
+                            border: '1px solid rgba(248, 113, 113, 0.5)',
+                            backgroundColor: 'transparent',
+                            color: '#ef4444',
+                          }}
                         >
                           <Trash2 size={14} />
                           {copy.delete}

@@ -3,9 +3,11 @@ import { ArrowRight, Bot, Shield, Languages, Sparkles, Zap, Activity, Workflow }
 import { AppControls } from '../components/AppControls';
 import { siteCopy } from '../content/siteCopy';
 import { useAppSettings } from '../context/AppSettingsContext';
+import { useAuth } from '../context/AuthContext';
 
 export const LandingPage = () => {
   const { language } = useAppSettings();
+  const { isUser } = useAuth();
   const copy = siteCopy[language];
   const featureIcons = [Bot, Shield, Languages] as const;
   const previewIcons = [Sparkles, Activity, Workflow] as const;
@@ -25,15 +27,23 @@ export const LandingPage = () => {
           </Link>
 
           <div className="flex items-center gap-3">
-            <Link
-              to="/sign-in"
-              className="hidden text-sm font-medium app-muted transition-colors hover:text-[color:var(--app-text)] sm:inline-flex"
-            >
-              {copy.common.signIn}
-            </Link>
-            <Link to="/sign-up" className="hidden rounded-full app-button-primary px-4 py-2 text-sm font-semibold sm:inline-flex">
-              {copy.common.signUp}
-            </Link>
+            {!isUser ? (
+              <>
+                <Link
+                  to="/sign-in"
+                  className="hidden text-sm font-medium app-muted transition-colors hover:text-[color:var(--app-text)] sm:inline-flex"
+                >
+                  {copy.common.signIn}
+                </Link>
+                <Link to="/sign-up" className="hidden rounded-full app-button-primary px-4 py-2 text-sm font-semibold sm:inline-flex">
+                  {copy.common.signUp}
+                </Link>
+              </>
+            ) : (
+              <Link to="/dashboard" className="hidden rounded-full app-button-primary px-4 py-2 text-sm font-semibold sm:inline-flex">
+                {copy.common.dashboard}
+              </Link>
+            )}
             <AppControls compact />
           </div>
         </div>
@@ -60,10 +70,17 @@ export const LandingPage = () => {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link to="/sign-up" className="app-button-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
-                {copy.landing.primaryCta}
-                <ArrowRight size={16} />
-              </Link>
+              {!isUser ? (
+                <Link to="/sign-up" className="app-button-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
+                  {copy.landing.primaryCta}
+                  <ArrowRight size={16} />
+                </Link>
+              ) : (
+                <Link to="/dashboard" className="app-button-primary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
+                  {copy.common.dashboard}
+                  <ArrowRight size={16} />
+                </Link>
+              )}
               <Link to="/dashboard" className="app-button-secondary inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-semibold">
                 {copy.landing.secondaryCta}
               </Link>

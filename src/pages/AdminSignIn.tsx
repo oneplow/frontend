@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowRight, Shield, AlertCircle, Info } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -9,7 +9,7 @@ export const AdminSignIn = () => {
   const [adminKey, setAdminKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { loginAdminFallback } = useAuth();
+  const { loginAdminFallback, isUser } = useAuth();
   const { language } = useAppSettings();
   const navigate = useNavigate();
   const copy =
@@ -42,6 +42,12 @@ export const AdminSignIn = () => {
           returnToUser: 'Return to User Login',
           goToSignIn: 'Sign in with Google',
         };
+
+  useEffect(() => {
+    if (isUser) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isUser, navigate]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();

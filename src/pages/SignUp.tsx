@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { AlertCircle, ArrowLeft, UserPlus } from 'lucide-react';
 import type { TokenResponse } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
@@ -10,10 +10,16 @@ import { useAuth } from '../context/AuthContext';
 
 export const SignUp = () => {
   const [error, setError] = useState('');
-  const { apiUrl, loginUser } = useAuth();
+  const { apiUrl, loginUser, isUser } = useAuth();
   const { language } = useAppSettings();
   const navigate = useNavigate();
   const copy = siteCopy[language];
+
+  useEffect(() => {
+    if (isUser) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isUser, navigate]);
 
   const resolveGoogleErrorMessage = useCallback((message: string, fallback: string) => {
     const normalizedMessage = message.toLowerCase();
