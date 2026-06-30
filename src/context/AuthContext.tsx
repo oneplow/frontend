@@ -9,7 +9,6 @@ interface AuthContextType {
   isAdmin: boolean;
   isUser: boolean;
   loginUser: (url: string, token: string, user: string, role?: string) => void;
-  loginAdminFallback: (url: string, key: string) => void;
   logout: () => void;
 }
 
@@ -40,17 +39,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUserRole(role || 'user');
   };
 
-  const loginAdminFallback = (url: string, key: string) => {
-    setApiUrl(url);
-    // Store admin key as user token for API calls; set role to admin
-    localStorage.setItem('USER_TOKEN', key);
-    localStorage.setItem('USERNAME', 'admin');
-    localStorage.setItem('USER_ROLE', 'admin');
-    setUserToken(key);
-    setUsername('admin');
-    setUserRole('admin');
-  };
-
   const logout = () => {
     localStorage.removeItem('USER_TOKEN');
     localStorage.removeItem('USERNAME');
@@ -63,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{
-      apiUrl, setApiUrl, userToken, username, userRole, isAdmin, isUser, loginUser, loginAdminFallback, logout
+      apiUrl, setApiUrl, userToken, username, userRole, isAdmin, isUser, loginUser, logout
     }}>
       {children}
     </AuthContext.Provider>

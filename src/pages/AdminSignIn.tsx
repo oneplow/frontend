@@ -9,7 +9,7 @@ export const AdminSignIn = () => {
   const [adminKey, setAdminKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { loginAdminFallback, isUser } = useAuth();
+  const { loginUser, isUser } = useAuth();
   const { language } = useAppSettings();
   const navigate = useNavigate();
   const copy =
@@ -56,12 +56,15 @@ export const AdminSignIn = () => {
 
     try {
       const cleanUrl = adminUrl.replace(/\/$/, '');
-      const res = await fetch(`${cleanUrl}/admin/keys`, {
-        headers: { Authorization: `Bearer ${adminKey}` }
+      const res = await fetch(`${cleanUrl}/auth/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ admin_key: adminKey })
       });
       if (!res.ok) throw new Error(copy.invalidKey);
 
-      loginAdminFallback(cleanUrl, adminKey);
+      const data = await res.json();
+      loginUser(cleanUrl, data.token, data.username, data.role);
       navigate('/dashboard/keys');
     } catch (err: any) {
       setError(err.message || copy.loginFailed);
