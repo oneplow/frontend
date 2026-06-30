@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Activity, Box, CheckCircle2, Clock, ChevronRight } from 'lucide-react';
+import { Activity, Box, CheckCircle2, Clock, ChevronRight, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PageLoader } from '../components/PageLoader';
@@ -406,25 +406,39 @@ export const UsagePage = () => {
               <div className="app-tab-group">
                 <button
                   onClick={() => setChartTab('Requests')}
-                  className="app-tab-button"
+                  className="app-tab-button disabled:opacity-50 disabled:cursor-not-allowed"
                   data-active={chartTab === 'Requests'}
+                  disabled={!hasChartData}
                 >
                   {copy.tabs.Requests}
                 </button>
                 <button
                   onClick={() => setChartTab('Tokens')}
-                  className="app-tab-button"
+                  className="app-tab-button disabled:opacity-50 disabled:cursor-not-allowed"
                   data-active={chartTab === 'Tokens'}
+                  disabled={!hasChartData}
                 >
                   {copy.tabs.Tokens}
                 </button>
               </div>
             </div>
           </div>
-          <div className="mt-4 rounded-[16px] min-h-[260px]">
+          <div className="mt-4 rounded-[16px] min-h-[260px] flex flex-col">
             {!hasChartData ? (
-               <div className={`${subtlePanelClass} flex flex-1 items-center justify-center border border-dashed`}>
-                 <span className="text-[14px] font-medium app-muted">{copy.noUsage}</span>
+               <div className={`${subtlePanelClass} flex flex-1 items-center justify-center border border-dashed rounded-[16px] min-h-[260px]`}>
+                 <div className="flex flex-col items-center text-center gap-3 px-6">
+                   <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--app-surface)', color: 'var(--app-text-muted)' }}>
+                     <BarChart3 size={24} strokeWidth={1.5} />
+                   </div>
+                   <div className="space-y-1">
+                     <span className="block text-[15px] font-semibold app-text">{copy.noUsage}</span>
+                     <span className="block text-[13px] app-muted">
+                       {language === 'th'
+                         ? 'ข้อมูลจะปรากฏหลังจากมีการใช้งาน API ในช่วงเวลาที่เลือก'
+                         : 'Data will appear once API usage occurs in the selected period.'}
+                     </span>
+                   </div>
+                 </div>
                </div>
             ) : (
                <div className="h-[260px] rounded-[16px] border p-3" style={{ borderColor: 'var(--app-border)', backgroundColor: 'var(--app-surface-muted)' }}>

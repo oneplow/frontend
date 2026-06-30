@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Search, RefreshCw, Download, ChevronRight, ChevronLeft, X, Copy
+  Search, RefreshCw, ChevronRight, ChevronLeft, X, Copy, FileSearch
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -46,7 +46,7 @@ export const LogsPage = () => {
             statusOptions: { all: 'ทุกสถานะ', success: 'สำเร็จ', error: 'ผิดพลาด' },
             modelOptions: { all: 'ทุกโมเดล' },
             timeOptions: { all: 'ทุกช่วงเวลา', today: 'วันนี้' },
-            actions: { reset: 'รีเซ็ต', refresh: 'รีเฟรช', export: 'ส่งออก CSV' },
+            actions: { refresh: 'รีเฟรช' },
             table: {
               request: 'คำขอ',
               user: 'ผู้ใช้',
@@ -90,7 +90,7 @@ export const LogsPage = () => {
             statusOptions: { all: 'ทุกสถานะ', success: 'สำเร็จ', error: 'ผิดพลาด' },
             modelOptions: { all: 'ทุกโมเดล' },
             timeOptions: { all: 'ทุกช่วงเวลา', today: 'วันนี้' },
-            actions: { reset: 'รีเซ็ต', refresh: 'รีเฟรช', export: 'ส่งออก CSV' },
+            actions: { refresh: 'รีเฟรช' },
             table: {
               request: 'คำขอ',
               user: 'ผู้ใช้',
@@ -135,7 +135,7 @@ export const LogsPage = () => {
             statusOptions: { all: 'All status', success: 'Success', error: 'Error' },
             modelOptions: { all: 'All models' },
             timeOptions: { all: 'All time', today: 'Today' },
-            actions: { reset: 'Reset', refresh: 'Refresh', export: 'Export CSV' },
+            actions: { refresh: 'Refresh' },
             table: {
               request: 'Request',
               user: 'User',
@@ -179,7 +179,7 @@ export const LogsPage = () => {
             statusOptions: { all: 'All status', success: 'Success', error: 'Error' },
             modelOptions: { all: 'All models' },
             timeOptions: { all: 'All time', today: 'Today' },
-            actions: { reset: 'Reset', refresh: 'Refresh', export: 'Export CSV' },
+            actions: { refresh: 'Refresh' },
             table: {
               request: 'Request',
               user: 'User',
@@ -411,23 +411,11 @@ export const LogsPage = () => {
           />
           
           <button 
-            onClick={() => { setSearch(''); setStatusFilter('all'); setModelFilter('all'); setTimeFilter('all'); }}
-            className="app-button-secondary rounded-xl px-4 py-2.5 text-[14px] font-medium shadow-sm"
-          >
-            {copy.actions.reset}
-          </button>
-          
-          <button 
             onClick={fetchLogs}
             className="app-button-secondary flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-bold shadow-sm whitespace-nowrap"
           >
             <RefreshCw size={16} />
             {copy.actions.refresh}
-          </button>
-          
-          <button className="app-button-primary flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-bold whitespace-nowrap">
-            <Download size={16} />
-            {copy.actions.export}
           </button>
         </div>
       </div>
@@ -451,8 +439,20 @@ export const LogsPage = () => {
             <tbody style={{ backgroundColor: 'var(--app-surface)' }}>
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={isAdmin ? 8 : 7} className="py-12 text-center app-muted">
-                    {copy.empty}
+                  <td colSpan={isAdmin ? 8 : 7} className="py-16 text-center">
+                    <div className="flex flex-col items-center justify-center gap-3 px-6">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: 'var(--app-surface)', color: 'var(--app-text-muted)' }}>
+                        <FileSearch size={24} strokeWidth={1.5} />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="block text-[15px] font-semibold app-text">{copy.empty}</span>
+                        <span className="block text-[13px] app-muted">
+                          {language === 'th'
+                            ? 'ลองเปลี่ยนตัวกรองหรือช่วงเวลา แล้วกดรีเฟรชอีกครั้ง'
+                            : 'Try adjusting your filters or time range, then refresh.'}
+                        </span>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
